@@ -66,15 +66,39 @@ function retrieveFile(file_id) {
         return new Promise((resolve, reject) => {
             const transaction = db.transaction(['files'], 'readonly');
             const store = transaction.objectStore('files');
+            const request = store.get(file_id);  // Get file by file_id
+
+            request.onsuccess = (event) => {
+                const result = event.target.result;
+                if (result) {
+                    // Ensure metadata is included with the result
+                    resolve({
+                        file: result.file,
+                        metadata: result.metadata || {}  // Check if metadata exists
+                    });
+                } else {
+                    reject('File not found');
+                }
+            };
+
+            request.onerror = () => {
+                reject(request.error);
+            };
+        });
+    });
+}
+
+function fileExists(file_id) {
+    return openDatabase().then((db) => {
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction(['files'], 'readonly');
+            const store = transaction.objectStore('files');
             const request = store.get(file_id);
             
             request.onsuccess = (event) => {
                 const result = event.target.result;
-                if (result) {
-                    resolve(result.file);
-                } else {
-                    reject('File not found');
-                }
+                // If result is found, the file exists
+                resolve(result !== undefined);
             };
             
             request.onerror = () => {
@@ -124,10 +148,17 @@ async function processFile(file, index = 0, isExtracted = false) {
     console.log('File type:', file_extension);
 
     if (file_extension === 'dem') {
-        storeFile(file)
-            .then((message) => console.log(message))
-            .catch((error) => console.error('Error storing file:', error));
-            
+        fileExists(file.name)
+            .then((exists) => {
+                if (!exists) {
+                    storeFile(file)
+                        .then((message) => console.log(message))
+                        .catch((error) => console.error('Error storing file:', error));
+                }
+            })
+            .catch((error) => {
+                console.error('Error checking file existence:', error);
+            });
         parseDemo(file, index);
     } else if (['zip', 'rar', '7z', 'tar', 'gz', 'xz', 'bz2'].includes(file_extension)) {
         try {
@@ -150,9 +181,9 @@ async function processFile(file, index = 0, isExtracted = false) {
 async function processFileFromDatabase(file_id, index = 0) {        
     if ($('.demo-table[data-id="' + file_id + '"]').length == 0) {
         try {
-            const file = await retrieveFile(file_id);
-            if (file) {
-                await processFile(file, index);
+            const retrieve = await retrieveFile(file_id);
+            if (retrieve.file) {
+                await processFile(retrieve.file, index);
             } else {
                 console.error('File not found in database:', file_id);
             }
@@ -599,7 +630,7 @@ function generateDemoTable(jump_stats, jumps_data, index) {
 
 function parseDemo(file, index, is_archive=false) {
     const demoReader = new HLDemo.DemoReader();
-    demoReader.onready(function() {
+    demoReader.onready(async function() {
         const frames = demoReader.directoryEntries[1].frames;
         
         //console.log(demoReader);
@@ -617,19 +648,26 @@ function parseDemo(file, index, is_archive=false) {
         
         generateDemoTable(jump_stats, jumps_data, index);
         
-        
-        const meta = {
-            demo_meta: jumps_data.user_info,
-            uploaded: + new Date()
-        };
+        try {
+            const retrieve = await retrieveFile(file.name);
+            if (retrieve && !retrieve.metadata.uploaded) {  
+                const meta = {
+                    demo_meta: jumps_data.user_info,
+                    uploaded: + new Date()
+                };
 
-        updateDemoMetadata(file.name, meta)
-            .then((message) => {
-                console.log(message);
-            })
-            .catch((error) => {
-                console.error(error);
-            });
+                updateDemoMetadata(file.name, meta)
+                    .then((message) => {
+                        console.log(message);
+                    })
+                    .catch((error) => {
+                        console.error(error);
+                    });
+            }
+        } catch (error) {
+            console.error('Error retrieving file from database:', error);
+        }
+        
         generateFileTable('.container.demos .table');
     });
     
@@ -988,12 +1026,12 @@ function searchTable() {
         const demo_txt = $(this).find('.analyze-demo').text().toLowerCase();
         const player_txt = $(this).find('.demoplayer').text().toLowerCase();
            if (
-                            demo_txt.indexOf(demoSearch) > -1 &&
-                            player_txt.indexOf(playerSearch) > -1
-                        ) {
-                            $(this).show();
-                        } else {
-                            $(this).hide();
-                        }
+                demo_txt.indexOf(demoSearch) > -1 &&
+                player_txt.indexOf(playerSearch) > -1
+            ) {
+                $(this).show();
+            } else {
+                $(this).hide();
+            }
     });
 }
