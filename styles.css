@@ -1,0 +1,127 @@
+#drop-area {
+  width: 100%;
+  height: 127px;
+  border: 2px dashed #012cfd;
+  border-radius: 10px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  font-family: Arial, sans-serif;
+  margin: 40px 0px 30px 0px;
+  cursor: pointer;
+}
+#drop-area p {
+  padding: 0;
+  margin: 0;
+  color: #343434;
+}
+#drop-area small {
+  font-size: 0.6rem;
+}
+#drop-area:hover,
+#drop-area:focus {
+  background: #e9eef7;
+}
+
+#drop-area p {
+  padding: 0;
+  margin: 0;
+}
+
+#drop-area:hover,
+#drop-area:focus {
+  background: #e9eef7;
+}
+
+#drop-area.highlight {
+  border-color: #6c63ff;
+}
+
+#file-list {
+  margin-top: 20px;
+}
+
+.t-set h4 {
+  font-size: 12px;
+  font-style: italic;
+}
+.t-set .t-amount {
+  font-size: 16px;
+  display: inline-block;
+  border: 1px solid;
+  padding: 2px 14px;
+  font-weight: bolder;
+}
+.t-set {
+  border-top: 1px solid #efefef;
+  /*! padding: 30px; */
+  margin-bottom: 17px;
+  padding-top: 17px;
+}
+.t-set:first-child {
+  padding-top: 0px;
+  border-top: none;
+}
+.t-set .t-fogtable {
+  font-size: 12px;
+  margin-top: 18px;
+}
+.t-set .toggle-joff-frames {
+  font-size: 12px;
+  padding: 1px 6px;
+  box-shadow: 3px 3px #f6f6f6;
+  background: white;
+  color: blue;
+  border-color: #f4f4f4;
+}
+.t-set.amount-1,
+.t-set.amount-2,
+.t-set.amount-3,
+.t-set.amount-4,
+.t-set.amount-5 {
+  display: none;
+}
+.expand-all-sets .t-set.amount-1,
+.expand-all-sets .t-set.amount-2,
+.expand-all-sets .t-set.amount-3,
+.expand-all-sets .t-set.amount-4,
+.expand-all-sets .t-set.amount-5 {
+  display: block;
+}
+
+.extra-container {
+  max-height: 100%;
+  max-width: 760px;
+  overflow: scroll;
+}
+.fogPieChart {
+  max-height: 300px;
+}
+
+#demo_files {
+  border-collapse: collapse;
+  width: 100%;
+  margin-top: 20px;
+}
+#demo_files th,
+#demo_files td {
+  border: 1px solid black;
+  padding: 8px;
+  text-align: left;
+}
+#demo_files th {
+  background-color: #f2f2f2;
+}
+#demo_files tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+.demo-meta {
+  display: none;
+}
+.container.demos {
+  padding-top: 50px;
+}
+.demos-actions {
+  display: none;
+}
