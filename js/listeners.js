@@ -126,5 +126,4 @@ $(document).on('change', '#show-sets-min', function() {
 
 $(document).ready(function() {
     generateFileTable('.container.demos .table');
-    $('#version-hash').text(version_hash);
 });
