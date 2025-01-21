@@ -125,3 +125,23 @@
 .demos-actions {
   display: none;
 }
+.f-amount {
+  float: left;
+  display: block;
+  padding: 6px 8px;
+  border: 1px solid white;
+}
+.toggle-consecutive-fogs {
+  padding: 0px 8px;
+  margin: 0px 0px;
+}
+.analyzer-settings label {
+  padding-left: 10px;
+}
+.analyzer-settings {
+  margin-left: 5px;
+}
+#show-sets-min {
+  display: inline-block;
+  width: 60px;
+}

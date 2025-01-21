@@ -110,6 +110,21 @@ $(document).on('keyup', '#search-demo, #search-player', function() {
     searchTable();
 });
 
+$(document).on('change', 'input.toggle-fogs', function() {
+    const fog_num = $(this).attr('data-number');
+
+    $(`th.fog${fog_num}s, td.fog${fog_num}s`).toggle();
+    
+    if ($('#show-sets-min').find(':selected').val() > 0) {
+        filterDemoTablesByConsecutiveFogs();
+    }
+});
+
+$(document).on('change', '#show-sets-min', function() {
+    filterDemoTablesByConsecutiveFogs();
+});
+
 $(document).ready(function() {
     generateFileTable('.container.demos .table');
+    $('#version-hash').text(version_hash);
 });

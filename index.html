@@ -38,9 +38,24 @@
                 </div>
             </div>
         </section>
+        <div class="container options"></div>
         <div class="container data"></div>
         <div class="container demos">
             <h4>Your demos</h4>
+            <div class="analyzer-settings">
+                <div class="input-group">
+                    <input type="radio" name="analyzer-setting" id="consecutive_jump_ticks" checked>
+                    <label for="consecutive_jump_ticks">Analyze consecutive bhop jump ticks</label>
+                </div>
+                <div class="input-group">
+                    <input type="radio" name="analyzer-setting" id="consecutive_fogs">
+                    <label for="consecutive_fogs">Analyze consecutive FOGs</label>
+                </div>
+                <div class="input-group">
+                    <input type="checkbox" id="generate_graphs" checked>
+                    <label for="generate_graphs">Generate graphs <small>(if disabled, processing is faster)</small></label>
+                </div>
+            </div>
             <div class="demos-actions">
                 <button class="btn btn-primary analyze-selected">Analyze</button>
                 <button class="btn btn-danger delete-selected">Delete files</button>
@@ -49,14 +64,15 @@
         </div>
         <div class="container">
             <footer class="py-5">
-                <p>DemoAnalyzer
-                <br>version 0.0.3</p>
+                <p>DemoAnalyzer</p>
+                <p>version 0.0.4 <span id="version-hash"></span></p>
                 <!-- MEOW by hönö dille!!! -->
             </footer>
         </div>
     </main>
     <script src="js/config.js"></script>
     <script src="js/listeners.js"></script>
+    <script src="js/version-hash.js"></script>
     <script src="js/main.js"></script>
 </body>
 

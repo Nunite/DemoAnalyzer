@@ -47,8 +47,8 @@ function deleteFile(fileId) {
     return openDatabase().then((db) => {
         return new Promise((resolve, reject) => {
             const transaction = db.transaction(['files'], 'readwrite');
-            const store = transaction.objectStore('files'); console.log('fileId:',fileId);
-            const request = store.delete(fileId); // Use fileId (file.name) to delete the file
+            const store = transaction.objectStore('files');
+            const request = store.delete(fileId);
             
             request.onsuccess = () => {
                 resolve('File deleted successfully');
@@ -66,15 +66,14 @@ function retrieveFile(file_id) {
         return new Promise((resolve, reject) => {
             const transaction = db.transaction(['files'], 'readonly');
             const store = transaction.objectStore('files');
-            const request = store.get(file_id);  // Get file by file_id
+            const request = store.get(file_id);
 
             request.onsuccess = (event) => {
                 const result = event.target.result;
                 if (result) {
-                    // Ensure metadata is included with the result
                     resolve({
                         file: result.file,
-                        metadata: result.metadata || {}  // Check if metadata exists
+                        metadata: result.metadata || {}
                     });
                 } else {
                     reject('File not found');
@@ -97,7 +96,6 @@ function fileExists(file_id) {
             
             request.onsuccess = (event) => {
                 const result = event.target.result;
-                // If result is found, the file exists
                 resolve(result !== undefined);
             };
             
@@ -114,7 +112,6 @@ function retrieveAllFiles() {
             const transaction = db.transaction(['files'], 'readonly');
             const store = transaction.objectStore('files');
             const request = store.openCursor();
-
             const files = [];
             
             request.onsuccess = (event) => {
@@ -142,10 +139,12 @@ function retrieveAllFiles() {
 
 async function processFile(file, index = 0, isExtracted = false) {
     const file_extension = file.name.split('.').pop().toLowerCase();
+    /*
     console.log(isExtracted ? 'Processing extracted file:' : 'Processing file:');
     console.log('File name:', file.name);
     console.log('File size:', file.size);
     console.log('File type:', file_extension);
+    */
 
     if (file_extension === 'dem') {
         fileExists(file.name)
@@ -168,7 +167,7 @@ async function processFile(file, index = 0, isExtracted = false) {
 
             for (const [filename, file_data] of Object.entries(files_obj)) {
                 console.log(`Extracted file: ${filename}`, file_data);
-                await processFile(file_data, index, true); // Recursively process extracted files
+                await processFile(file_data, index, true);
             }
         } catch (err) {
             console.error('Error processing archive file:', err);
@@ -178,7 +177,7 @@ async function processFile(file, index = 0, isExtracted = false) {
     }
 }
 
-async function processFileFromDatabase(file_id, index = 0) {        
+async function processFileFromDatabase(file_id, index = 0) {
     if ($('.demo-table[data-id="' + file_id + '"]').length == 0) {
         try {
             const retrieve = await retrieveFile(file_id);
@@ -309,6 +308,31 @@ function generateTickTable(tick_data, tick_number) {
     }
     
     return td_start + html;
+}
+
+function generateConsecutiveFogsTable(fog_data, fog_number) {
+    let html = `<td class="fog${fog_number}s">`;
+    if (fog_data) {
+        for (let i = 0; i < fog_data.length; i++) {
+            let set = `Set ${i + 1}`;
+            let amount = fog_data[i];
+            let amount_color = '';
+            if (amount <= 5) {
+                amount_color = '#c2fcc2';
+            } else if (amount > 5 && amount <= 10) {
+                amount_color = '#effcc2';
+            } else if (amount > 10 && amount <= 21) {
+                amount_color = '#ffbd76';
+            } else if (amount > 22) {
+                amount_color = '#dc008f';
+            } else {
+                amount_color = '#fff';
+            }
+            html += `<div class="f-amount" title="${set}" style="background:${amount_color}">${amount}</div>`;
+        }
+    }
+    html += '</td>';
+    return html;
 }
 
 function getColorForIndex(index) {
@@ -580,31 +604,62 @@ function parseJumpData(jumps_data) {
     return jumps;
 }
 
-function generateDemoTable(jump_stats, jumps_data, index) {
-    let table_html = `<table class="table table-bordered table-responsive demo-table" data-id="${jumps_data.filename}">
-        <tr>
-            <thead>
-                <tr>
-                    <th>&nbsp;</th>
-                    <th title="Bhops with consecutive 1st tick +jump">1TBJs</th>
-                    <th title="Bhops with consecutive 2nd tick +jump">2TBJs</th>
-                    <th title="Bhops with consecutive 3rd tick +jump">3TBJs</th>
-                    <th title="Bhops with consecutive 4rd tick +jump">4TBJs</th>
-                    <th title="Bhops with consecutive 5th tick +jump">5TBJs</th>
-                </tr>
-            </thead>
-        </tr>
-        <tbody>
-    `;
-    
-    const tdata = jump_stats.consecutive_jump_ticks;
-    
-    table_html += `<tr><td style="width: 16%;">${jumps_data.filename}<div class="demo-extra-btn"><button class="btn btn-primary btn-sm toggle-graphs">Toggle graphs</button></div></td>`;
-
-    for (let tick_number = 1; tick_number <= 5; tick_number++) {
-        table_html += generateTickTable(tdata[`tick${tick_number}`], tick_number);
+function generateDemoTable(jump_stats, jumps_data, index, style='consecutive_fogs', generate_graphs=true) {
+    let table_html = `<table class="table table-bordered table-responsive demo-table" data-id="${jumps_data.filename}">`;`
+    `
+    if (style == 'consecutive_jump_ticks') {
+        table_html += `
+            <tr>
+                <thead>
+                    <tr>
+                        <th>&nbsp;</th>
+                        <th>1TBJs</th>
+                        <th>2TBJs</th>
+                        <th>3TBJs</th>
+                        <th>4TBJs</th>
+                        <th>5TBJs</th>
+                    </tr>
+                </thead>
+            </tr>
+            <tbody>
+        `;
+    } else if (style === 'consecutive_fogs') {
+        table_html += `
+            <tr>
+                <thead>
+                    <tr>
+                        <th>&nbsp;</th>
+                        <th class="fog1s">FOG1s</th>
+                        <th class="fog2s">FOG2s</th>
+                        <th class="fog3s">FOG3s</th>
+                        <th class="fog4s">FOG4s</th>
+                        <th class="fog5s">FOG5s</th>
+                    </tr>
+                </thead>
+            </tr>
+            <tbody>
+        `;
     }
-   
+    
+    let generate_graphs_btn = '';
+    if (generate_graphs) {
+        generate_graphs_btn = `<div class="demo-extra-btn"><button class="btn btn-primary btn-sm toggle-graphs">Toggle graphs</button></div>`;
+    }
+
+    table_html += `<tr><td style="width: 16%;">${jumps_data.filename}${generate_graphs_btn}</td>`;
+
+    if (style == 'consecutive_jump_ticks') {
+        const tdata = jump_stats.consecutive_jump_ticks;
+        for (let tick_number = 1; tick_number <= 5; tick_number++) {
+            table_html += generateTickTable(tdata[`tick${tick_number}`], tick_number);
+        }
+    } else if (style === 'consecutive_fogs') {
+        const fdata = jump_stats.consecutive_fogs;
+        for (let fog_number = 1; fog_number <= 5; fog_number++) {
+            table_html += generateConsecutiveFogsTable(fdata[fog_number], fog_number);
+        }
+    }
+
     table_html += '</tr>';
     const extra_html = `
         <div class="extra-container">
@@ -620,12 +675,30 @@ function generateDemoTable(jump_stats, jumps_data, index) {
     `;
     table_html += `<tr class="extra" style="display:none;"><td colspan="6">${extra_html}</td></tr>`;
     table_html += '</tbody></table>';
-    
+
     $('.container.data').prepend(table_html);
     
-    generateFogCountChart(jump_stats.fog_counts, index);
-    generateFogPieChart(jump_stats.fog_counts, index);
-    generateConsecutiveJumpTicksChart(jump_stats.consecutive_jump_ticks, index);
+    if (style === 'consecutive_fogs' && $('.toggle-consecutive-fogs').length == 0) {
+        let opts_html= `Toggle:`;
+        for (let fog_number = 1; fog_number <= 5; fog_number++) {
+            opts_html += `<div class="input-group"><input type="checkbox" class="toggle-fogs" data-number="${fog_number}" id="toggle-fog${fog_number}" checked><label class="toggle-consecutive-fogs" for="toggle-fog${fog_number}">FOG${fog_number}s</label></div>`;
+        }
+        $('.container.options').prepend(opts_html);
+
+        let opts = '<select class="form-control" name="show-sets-min" id="show-sets-min">';
+        for (let i = 0; i < 100; i++) {
+            opts += `<option value="${i}">${i}</option>`;
+        }
+        opts += '</select>';
+        opts_html = `<div>Only show demos which have more than n sets of consecutive FOGs: ${opts}</div>`;
+        $('.container.options').prepend(opts_html);
+    }
+    
+    if (generate_graphs) {
+        generateFogCountChart(jump_stats.fog_counts, index);
+        generateFogPieChart(jump_stats.fog_counts, index);
+        generateConsecutiveJumpTicksChart(jump_stats.consecutive_jump_ticks, index);
+    }
 }
 
 function parseDemo(file, index, is_archive=false) {
@@ -643,14 +716,19 @@ function parseDemo(file, index, is_archive=false) {
         const jumps = parseJumpData(jumps_data);
         const jump_stats = getJumpStats(jumps);
         
+        /*
         console.log(jumps_data);
         console.log(jump_stats);
+        */
         
-        generateDemoTable(jump_stats, jumps_data, index);
-        
+        const analyzer_style = $('input[name="analyzer-setting"]:checked').attr('id');
+        const generate_graphs = $('#generate_graphs').is(':checked');
+
+        generateDemoTable(jump_stats, jumps_data, index, analyzer_style, generate_graphs);
+
         try {
             const retrieve = await retrieveFile(file.name);
-            if (retrieve && !retrieve.metadata.uploaded) {  
+            if (retrieve && !retrieve.metadata.uploaded) { 
                 const meta = {
                     demo_meta: jumps_data.user_info,
                     uploaded: + new Date()
@@ -667,8 +745,6 @@ function parseDemo(file, index, is_archive=false) {
         } catch (error) {
             console.error('Error retrieving file from database:', error);
         }
-        
-        generateFileTable('.container.demos .table');
     });
     
     demoReader.parse(file);
@@ -678,10 +754,8 @@ function getJumpStats(jumps) {
     const data = {
         jump_tick_counts: [],
         fog_counts: {
-            1: 0, 2: 0,
-            3: 0, 4: 0,
-            5: 0, 6: 0,
-            7: 0, 8: 0,
+            1: 0, 2: 0, 3: 0, 4: 0,
+            5: 0, 6: 0, 7: 0, 8: 0,
             9: 0, 10: 0
         },
         consecutive_jump_ticks: {
@@ -691,13 +765,18 @@ function getJumpStats(jumps) {
             'tick4': { 'sets': [] },
             'tick5': { 'sets': [] }
         },
+        consecutive_fogs: {}
     };
 
     let prev_jump_tick = null;
     let current_set = null;
     let non_lj_count = 0;
 
-    jumps.forEach((jump) => {
+    // Variables to track consecutive FOGs
+    let prev_fog = null;
+    let fog_streak = { fog: null, count: 0 };
+
+    jumps.forEach((jump, index) => {
         if (jump.type === 2) {
             non_lj_count++;
 
@@ -711,8 +790,8 @@ function getJumpStats(jumps) {
             if (prev_jump_tick !== jump.first_jump_at_tick) {
                 if (current_set && current_set.amount > 1) {
                     // If the current set had more than one jump, add it to consecutive_jump_ticks
-                    data.consecutive_jump_ticks['tick'+prev_jump_tick] = data.consecutive_jump_ticks['tick'+prev_jump_tick] || { sets: [] };
-                    data.consecutive_jump_ticks['tick'+prev_jump_tick].sets.push(current_set);
+                    data.consecutive_jump_ticks['tick' + prev_jump_tick] = data.consecutive_jump_ticks['tick' + prev_jump_tick] || { sets: [] };
+                    data.consecutive_jump_ticks['tick' + prev_jump_tick].sets.push(current_set);
                 }
                 current_set = { fogs: {}, amount: 0, jumpoffs: [] };
             }
@@ -722,21 +801,42 @@ function getJumpStats(jumps) {
             current_set.amount++;
             current_set.jumpoffs.push(jump.jumpoff);
 
-            // Update previous jump tick
+            // Track consecutive FOGs
+            if (jump.fog === prev_fog) {
+                fog_streak.count++;
+            } else {
+                if (fog_streak.count > 1) {
+                    // Only store streaks with a count greater than 1
+                    data.consecutive_fogs[fog_streak.fog] = data.consecutive_fogs[fog_streak.fog] || [];
+                    data.consecutive_fogs[fog_streak.fog].push(fog_streak.count);
+                }
+                // Start a new streak
+                fog_streak = { fog: jump.fog, count: 1 };
+            }
+
+            // Update previous jump tick and fog
             prev_jump_tick = jump.first_jump_at_tick;
+            prev_fog = jump.fog;
+        }
+
+        // Finalize the last fog streak after the last jump
+        if (index === jumps.length - 1 && fog_streak.count > 1) {
+            data.consecutive_fogs[fog_streak.fog] = data.consecutive_fogs[fog_streak.fog] || [];
+            data.consecutive_fogs[fog_streak.fog].push(fog_streak.count);
         }
     });
 
     // Finalize the last set if it has more than one jump
     if (current_set && current_set.amount > 1) {
-        data.consecutive_jump_ticks['tick'+prev_jump_tick] = data.consecutive_jump_ticks['tick'+prev_jump_tick] || { sets: [] };
-        data.consecutive_jump_ticks['tick'+prev_jump_tick].sets.push(current_set);
+        data.consecutive_jump_ticks['tick' + prev_jump_tick] = data.consecutive_jump_ticks['tick' + prev_jump_tick] || { sets: [] };
+        data.consecutive_jump_ticks['tick' + prev_jump_tick].sets.push(current_set);
     }
 
     // Store non_lj_count
     data.non_lj_count = non_lj_count;
     return data;
 }
+
 
 function readFloat32(data) {
     const dataView = new DataView(data.buffer);
@@ -787,8 +887,6 @@ function parseMessage(data) {
 }
 
 function parseFrames(frames) {
-    const decoder = new TextDecoder('utf-8');
-    
     // declare bunch of helper stuff
     const jumps_data = {};
     const ground_frames = [];
@@ -925,7 +1023,7 @@ function formatFileSize(sizeInBytes) {
 }
 
 function generateFileTable(containerClass) {
-retrieveAllFiles()
+    retrieveAllFiles()
     .then((files) => {
         files.reverse();
         let html = `
@@ -996,7 +1094,7 @@ retrieveAllFiles()
 
             html += `
                 <tr>
-                    <td><input type="checkbox" data-id="${data.name}" class="form-check-input demo-checkbox"></td>
+                    <td><input type="checkbox" data-id="${data.name}" name="${data.name}" class="form-check-input demo-checkbox"></td>
                     <td class="demoname"><a href="#" class="analyze-demo" onclick="processFileFromDatabase('${data.name}', 99);">${data.name}</a></td>
                     <td class="demoplayer">${player}</td>
                     <td class="demodate" title="${new Date(data.lastModified).toLocaleString()}">${last_modified_date}</td>
@@ -1033,5 +1131,36 @@ function searchTable() {
             } else {
                 $(this).hide();
             }
+    });
+}
+
+function filterDemoTablesByConsecutiveFogs() {
+    const val = $('#show-sets-min').find(':selected').val();
+
+    if (!val) {
+        val = 0;
+    }
+
+    $('.demo-table').hide();
+
+    const fog_states = [
+        { toggle: '#toggle-fog1', class: '.fog1s' },
+        { toggle: '#toggle-fog2', class: '.fog2s' },
+        { toggle: '#toggle-fog3', class: '.fog3s' },
+        { toggle: '#toggle-fog4', class: '.fog4s' },
+        { toggle: '#toggle-fog5', class: '.fog5s' },
+    ];
+    
+    fog_states.forEach(({ toggle, class: fog_class }) => {
+        if ($(toggle).is(':checked')) {
+            $('.demo-table').each(function() {
+                $(this).find(`${fog_class} .f-amount`).each(function() {
+                    if (parseInt($(this).text()) > val) {
+                        $(this).closest('.demo-table').show();
+                        return false;
+                    }
+                });
+            });
+        }
     });
 }
