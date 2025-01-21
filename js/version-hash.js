@@ -1,1 +1,1 @@
-const version_hash = '0.0.3-4-g86e640c';
+const version_hash = '0.0.3-5-gb458c62';
