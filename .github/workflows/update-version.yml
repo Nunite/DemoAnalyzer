@@ -1,26 +1,20 @@
 name: Update Version Hash
-
 on:
   push:
     branches:
       - main
-
+permissions:
+  contents: write
 jobs:
-  update-version:
+  build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-
-      - name: Get Git commit hash and update version-hash.js
-        run: |
+      - uses: actions/checkout@v3
+      - run: |
           VERSION_HASH=$(git describe --tags --always)
           echo "const version_hash = '${VERSION_HASH}';" > js/version-hash.js
-
-      - name: Commit and push version-hash.js
-        run: |
-          git config user.name "GitHub Actions"
-          git config user.email "actions@github.com"
+          git config user.name github-actions
+          git config user.email github-actions@github.com
           git add js/version-hash.js
-          git commit -m "Update version-hash.js"
+          git commit -m "Updated version [workflow]"
           git push
