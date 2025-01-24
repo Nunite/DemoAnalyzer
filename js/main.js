@@ -701,10 +701,98 @@ function generateDemoTable(jump_stats, jumps_data, index, style='consecutive_fog
     }
 }
 
+function convertDemoToJson(frames, fileName) {
+    const result = {
+        fileName: fileName,
+        data: []
+    };
+
+    // 用于存储上一帧的yaw角度
+    let prevYawAngle = null;
+
+    // 辅助函数：保留5位小数
+    const toFixed5 = (num) => Number(num.toFixed(5));
+
+    // 辅助函数：计算最短角度差
+    const getShortestAngleDifference = (angle1, angle2) => {
+        let diff = angle1 - angle2;
+        // 将差值限制在 -180 到 180 度之间
+        while (diff > 180) diff -= 360;
+        while (diff < -180) diff += 360;
+        return diff;
+    };
+
+    frames.forEach((frame) => {
+        if (frame.type === 1 && frame.demoInfo) { // NetworkMessages
+            // 安全地获取属性值
+            const demoInfo = frame.demoInfo || {};
+            const cmd = demoInfo.cmd || {};
+            const refParams = demoInfo.refParams || {};
+            const viewangles = refParams.viewangles || [0, 0, 0];
+            const currentYawAngle = toFixed5(viewangles[1] || 0);
+
+            // 计算yawSpeed（第一帧时为0，之后计算最短角度差）
+            let yawSpeed = 0;
+            if (prevYawAngle !== null) {
+                yawSpeed = toFixed5(getShortestAngleDifference(currentYawAngle, prevYawAngle));
+            }
+            prevYawAngle = currentYawAngle;
+
+            // 检查移动指令
+            const forwardMove = toFixed5(cmd.forwardmove || 0);
+            const sideMove = toFixed5(cmd.sidemove || 0);
+            const buttons = cmd.buttons || 0;
+
+            // 定义按键常量
+            const IN_ATTACK = 1 << 0;
+            const IN_JUMP   = 1 << 1;
+            const IN_DUCK   = 1 << 2;
+            const IN_USE    = 1 << 5;
+
+            const frameData = {
+                frame: frame.frame || 0,
+                yawAngle: currentYawAngle,
+                yawSpeed: yawSpeed,
+                moveLeft: sideMove < 0 ? 1 : 0,
+                moveRight: sideMove > 0 ? 1 : 0,
+                moveForward: forwardMove > 0 ? 1 : 0,
+                moveBack: forwardMove < 0 ? 1 : 0,
+                use: (buttons & IN_USE) ? 1 : 0,
+                jump: (buttons & IN_JUMP) ? 1 : 0,
+                ground: refParams.onground === 1,
+                duck: (buttons & IN_DUCK) ? 1 : 0,
+                forward: forwardMove > 0,
+                back: forwardMove < 0,
+                attack: (buttons & IN_ATTACK) ? 1 : 0
+            };
+            result.data.push(frameData);
+        }
+    });
+
+    return result;
+}
+
+function downloadJson(data, filename) {
+    const jsonStr = JSON.stringify(data, null, 4);
+    const blob = new Blob([jsonStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename.replace('.dem', '.json');
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
 function parseDemo(file, index, is_archive=false) {
     const demoReader = new HLDemo.DemoReader();
     demoReader.onready(async function() {
         const frames = demoReader.directoryEntries[1].frames;
+        
+        // 添加转换和下载功能
+        const jsonData = convertDemoToJson(frames, file.name);
+        //downloadJson(jsonData, file.name);
         
         //console.log(demoReader);
         
@@ -1164,3 +1252,106 @@ function filterDemoTablesByConsecutiveFogs() {
         }
     });
 }
+
+// 添加新的转换相关函数
+function convertDemoFile(file) {
+    const demoReader = new HLDemo.DemoReader();
+    
+    // 添加错误处理
+    demoReader.onerror = function(error) {
+        const fileItem = document.querySelector(`#converter-file-list .file-item[data-filename="${file.name}"]`);
+        if (fileItem) {
+            const status = fileItem.querySelector('.status');
+            status.textContent = '转换失败: ' + error;
+            status.style.color = '#dc3545';
+        }
+        console.error('Demo reading error:', error);
+    };
+
+    demoReader.onready(function() {
+        try {
+            const frames = demoReader.directoryEntries[1].frames;
+            if (!frames || frames.length === 0) {
+                throw new Error('无法读取demo帧数据');
+            }
+
+            const jsonData = convertDemoToJson(frames, file.name);
+            //downloadJson(jsonData, file.name);
+            
+            // 更新转换状态
+            const fileItem = document.querySelector(`#converter-file-list .file-item[data-filename="${file.name}"]`);
+            if (fileItem) {
+                const status = fileItem.querySelector('.status');
+                status.textContent = '转换完成';
+                status.style.color = '#28a745';
+            }
+        } catch (error) {
+            const fileItem = document.querySelector(`#converter-file-list .file-item[data-filename="${file.name}"]`);
+            if (fileItem) {
+                const status = fileItem.querySelector('.status');
+                status.textContent = '转换失败: ' + error.message;
+                status.style.color = '#dc3545';
+            }
+            console.error('Conversion error:', error);
+        }
+    });
+
+    try {
+        // 更新状态为正在转换
+        const fileItem = document.querySelector(`#converter-file-list .file-item[data-filename="${file.name}"]`);
+        if (fileItem) {
+            const status = fileItem.querySelector('.status');
+            status.textContent = '正在转换...';
+            status.style.color = '#007bff';
+        }
+        
+        // 开始解析
+        demoReader.parse(file);
+    } catch (error) {
+        const fileItem = document.querySelector(`#converter-file-list .file-item[data-filename="${file.name}"]`);
+        if (fileItem) {
+            const status = fileItem.querySelector('.status');
+            status.textContent = '转换失败: ' + error.message;
+            status.style.color = '#dc3545';
+        }
+        console.error('Parse error:', error);
+    }
+}
+
+function handleConverterFiles(files) {
+    const fileList = document.getElementById('converter-file-list');
+    fileList.innerHTML = ''; // 清空现有列表
+
+    Array.from(files).forEach(file => {
+        // 创建文件项
+        const fileItem = document.createElement('div');
+        fileItem.className = 'file-item';
+        fileItem.setAttribute('data-filename', file.name);
+        
+        const fileName = document.createElement('span');
+        fileName.className = 'filename';
+        fileName.textContent = file.name;
+        
+        const status = document.createElement('span');
+        status.className = 'status';
+        status.textContent = '准备转换...';
+        
+        fileItem.appendChild(fileName);
+        fileItem.appendChild(status);
+        fileList.appendChild(fileItem);
+        
+        // 开始转换
+        convertDemoFile(file);
+    });
+}
+
+// 在文档加载完成后添加事件监听
+document.addEventListener('DOMContentLoaded', function() {
+    // 添加转换器的文件输入监听
+    const converterInput = document.getElementById('converter-file-input');
+    if (converterInput) {
+        converterInput.addEventListener('change', function(e) {
+            handleConverterFiles(e.target.files);
+        });
+    }
+});
