@@ -897,7 +897,7 @@ function parseFrames(frames) {
     const moveforward_command_frames = [];
     const moveback_command_frames = [];
     const use_command_frames = [];
-    const yaw_angles = [{}];
+    const yaw_angles = {};
     
     let jumping = false;
     let jump_frame = false;
@@ -1042,7 +1042,8 @@ function parseFrames(frames) {
         }
        
             if (frame.demoInfo && frame.demoInfo.userCmd && frame.demoInfo.userCmd.viewangles) {
-                yaw_angles[0][frame.frame] = Number(frame.demoInfo.userCmd.viewangles[1].toFixed(5));
+                const yaw_angle = Number(frame.demoInfo.userCmd.viewangles[1].toFixed(5));
+                yaw_angles[`${frame.frame}`] = yaw_angle;
             }
         
         if (frame.type === 1) {
@@ -1140,20 +1141,38 @@ function parseFrames(frames) {
 
 function parseFramesToGraph(frames) {
     const result = {
-        data: []
+        data: {}
     };
     
-    let frameCount = 0;
     let prevYawAngle = null;
     
-    frames.forEach(frame => {
+    // 辅助函数：计算两个角度之间的最小差值
+    function getAngleDifference(angle1, angle2) {
+        let diff = angle1 - angle2;
+        // 处理角度循环
+        if (diff > 180) {
+            diff -= 360;
+        } else if (diff < -180) {
+            diff += 360;
+        }
+        return diff;
+    }
+    
+    frames.forEach((frame) => {
         if (frame.type === 1 && frame.demoInfo && frame.demoInfo.userCmd) { // NetworkMessages
             const currentYawAngle = frame.demoInfo.userCmd.viewangles ? Number(frame.demoInfo.userCmd.viewangles[1].toFixed(5)) : 0;
             
+            // 获取当前帧号
+            const frameNumber = frame.demoInfo.frameIndex;
+            
+            // 如果这个帧号已经存在，我们需要保留所有的数据
+            if (!result.data[frameNumber]) {
+                result.data[frameNumber] = [];
+            }
+            
             const frameData = {
-                frame: frameCount,
                 yawAngle: currentYawAngle,
-                yawSpeed: prevYawAngle !== null ? Number((currentYawAngle - prevYawAngle).toFixed(5)) : 0,
+                yawSpeed: prevYawAngle !== null ? Number(getAngleDifference(currentYawAngle, prevYawAngle).toFixed(5)) : 0,
                 moveLeft: frame.demoInfo.userCmd.sidemove < 0 ? 1 : 0,
                 moveRight: frame.demoInfo.userCmd.sidemove > 0 ? 1 : 0,
                 moveForward: frame.demoInfo.userCmd.forwardmove > 0 ? 1 : 0,
@@ -1166,13 +1185,27 @@ function parseFramesToGraph(frames) {
                 back: frame.demoInfo.userCmd.forwardmove < 0
             };
             
-            result.data.push(frameData);
+            result.data[frameNumber].push(frameData);
             prevYawAngle = currentYawAngle;
-            frameCount++;
         }
     });
     
-    return result;
+    // 将对象转换为数组格式，保持帧的顺序
+    const frameNumbers = Object.keys(result.data).sort((a, b) => parseInt(a) - parseInt(b));
+    const finalResult = {
+        data: []
+    };
+    
+    frameNumbers.forEach(frameNumber => {
+        result.data[frameNumber].forEach(frameData => {
+            finalResult.data.push({
+                frame: parseInt(frameNumber),
+                ...frameData
+            });
+        });
+    });
+    
+    return finalResult;
 }
 
 function getJumpStats(jumps) {

@@ -70,7 +70,8 @@
             try {
                 demoReader.onready(function() {
                     const frames = demoReader.directoryEntries[1].frames;
-                    const jumps_data = parseFramesToGraph(frames);
+                    //const jumps_data = parseFramesToGraph(frames);
+                    const jumps_data = parseFrames(frames);
                     const jsonData = JSON.stringify(jumps_data, null, 2);
                     
                     // 创建Blob对象
@@ -80,7 +81,7 @@
                     const url = window.URL.createObjectURL(blob);
                     const a = document.createElement('a');
                     a.href = url;
-                    a.download = file.name.replace('.dem', '.xhr');
+                    a.download = file.name.replace('.dem', '.json');
                     
                     // 触发下载
                     document.body.appendChild(a);
