@@ -3,6 +3,12 @@
 <head>
     <title>Demo Viewer - TBJ Analysis</title>
     <style>
+        /* 防止滚动条导致的页面跳动 */
+        html {
+            overflow-y: scroll;
+            scrollbar-gutter: stable;
+        }
+        
         body {
             margin: 0;
             padding: 0;
@@ -13,19 +19,65 @@
             display: flex;
             padding: 20px;
             max-width: 1400px;
-            margin: 0 auto;
+            margin: 0 auto 0 300px;
             gap: 20px;
         }
         .file-list {
-            width: 200px;
+            width: 300px;
             background: #f5f5f5;
             border-radius: 6px;
             padding: 10px;
             height: fit-content;
         }
+        .file-list table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 1rem;
+            font-size: 14px;
+        }
+        .file-list td {
+            padding: 8px;
+            border-bottom: 1px solid #ddd;
+        }
+        .file-list tr:hover {
+            background-color: #f0f0f0;
+        }
+        .file-list .file-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+        .file-list .file-name {
+            color: #007bff;
+            text-decoration: none;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 200px;
+            display: block;
+        }
+        .file-list .file-name:hover {
+            text-decoration: underline;
+        }
+        .file-list .file-time {
+            color: #666;
+            font-size: 12px;
+            margin-top: 4px;
+        }
+        .delete-btn {
+            color: #dc3545;
+            cursor: pointer;
+            font-size: 16px;
+            line-height: 1;
+            margin-left: 8px;
+            flex-shrink: 0;
+        }
+        .delete-btn:hover {
+            color: #bd2130;
+        }
         .tbj-stats {
             position: absolute;
-            right: 240px;
+            right: 370px;
             top: 110px;
             width: 180px;
             background: #f5f5f5;
@@ -249,20 +301,24 @@
             margin-top: 0;
             margin-bottom: 15px;
         }
+        #tbjStats {
+            display: none;
+        }
+        .form-check-input {
+            margin-right: 5px;
+        }
+        .analyze-demo {
+            cursor: pointer;
+        }
     </style>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="js/hldemo.min.js"></script>
     <script src="js/config.js"></script>
     <script src="js/main.js"></script>
     <script src="js/demoDataConverter.js"></script>
     <script>
         window.onerror = function(msg, url, line, col, error) {
-            console.error('Global error:', {
-                message: msg,
-                url: url,
-                line: line,
-                column: col,
-                error: error
-            });
+            console.error('Error: ' + msg + '\nurl: ' + url + '\nline: ' + line);
             return false;
         };
     </script>
@@ -279,7 +335,7 @@
                 <div class="label">TBJ显示设置</div>
                 <div class="value">
                     <label>
-                        <input type="checkbox" id="showTBJ" checked onchange="toggleTBJDisplay()">
+                        <input type="checkbox" id="showTBJ" onchange="toggleTBJDisplay()">
                         显示TBJ数据
                     </label>
                 </div>
@@ -294,7 +350,7 @@
             </div>
             <p class="info-text">仅支持.xhr和.dem文件格式 (20MB maximum)</p>
             <div class="chart-container">
-                <div class="file-info" id="fileName"></div>
+                <h3 id="currentFileName" style="text-align: center; margin-bottom: 20px; color: #333;"></h3>
                 <div id="chartContainer" class="echarts-container"></div>
                 <div class="command-panel">
                     <div class="command-option">
@@ -477,7 +533,7 @@
                             initChart(chartData);
                             
                             // 显示文件名
-                            document.getElementById('fileName').textContent = file.name;
+                            document.getElementById('currentFileName').textContent = '当前文件：' + file.name;
                         } catch (error) {
                             console.error('处理Demo时出错:', error);
                         }
@@ -753,7 +809,7 @@
             fetch('hrbg_rabbitrun_outside_0121.59.xhr')
                 .then(response => response.json())
                 .then(demoData => {
-                    document.getElementById('fileName').textContent = `File name: ${demoData.fileName}`;
+                    document.getElementById('currentFileName').textContent = '当前文件：' + demoData.fileName;
                     initChart(demoData);
                 })
                 .catch(error => {
@@ -806,19 +862,242 @@
         }
 
         function toggleTBJDisplay() {
+            const tbjPanel = document.getElementById('tbjStats');
             const showTBJ = document.getElementById('showTBJ').checked;
-            const tbjStats = document.getElementById('tbjStats');
-            if (showTBJ) {
-                tbjStats.style.display = 'block';
-            } else {
-                tbjStats.style.display = 'none';
-            }
+            tbjPanel.style.display = showTBJ ? 'block' : 'none';
         }
 
         // 页面加载时初始化TBJ面板显示状态
         window.addEventListener('load', () => {
             toggleTBJDisplay();
+            // 初始化文件列表
+            generateFileTable('#fileList');
         });
+
+        function openDatabase() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open('fileStore', 1);
+                
+                request.onupgradeneeded = (e) => {
+                    const db = e.target.result;
+                    db.createObjectStore('files', { keyPath: 'id' });
+                };
+                
+                request.onsuccess = (e) => {
+                    resolve(e.target.result);
+                };
+                
+                request.onerror = (e) => {
+                    reject(e.target.error);
+                };
+            });
+        }
+
+        function retrieveAllFiles() {
+            return openDatabase().then((db) => {
+                return new Promise((resolve, reject) => {
+                    const transaction = db.transaction(['files'], 'readonly');
+                    const store = transaction.objectStore('files');
+                    const request = store.getAll();
+                    
+                    request.onsuccess = () => {
+                        resolve(request.result);
+                    };
+                    
+                    request.onerror = () => {
+                        reject(request.error);
+                    };
+                });
+            });
+        }
+
+        function processFileFromDatabase(file_id, index = 0) {
+            retrieveFile(file_id)
+                .then(({file}) => {
+                    // 更新文件名标题
+                    document.getElementById('currentFileName').textContent = '当前文件：' + file.name;
+                    processFile(file, index);
+                })
+                .catch((error) => {
+                    console.error('Error processing file from database:', error);
+                });
+        }
+
+        function retrieveFile(file_id) {
+            return openDatabase().then((db) => {
+                return new Promise((resolve, reject) => {
+                    const transaction = db.transaction(['files'], 'readonly');
+                    const store = transaction.objectStore('files');
+                    const request = store.get(file_id);
+
+                    request.onsuccess = (event) => {
+                        const result = event.target.result;
+                        if (result) {
+                            resolve({
+                                file: result.file,
+                                metadata: result.metadata || {}
+                            });
+                        } else {
+                            reject('File not found');
+                        }
+                    };
+
+                    request.onerror = () => {
+                        reject(request.error);
+                    };
+                });
+            });
+        }
+
+        function formatFileSize(sizeInBytes) {
+            const units = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB'];
+            let size = sizeInBytes;
+            let unitIndex = 0;
+
+            while (size >= 1024 && unitIndex < units.length - 1) {
+                size /= 1024;
+                unitIndex++;
+            }
+
+            return `${size.toFixed(1)} ${units[unitIndex]}`;
+        }
+
+        function formatDate(date) {
+            const now = new Date();
+            const diff = now - date;
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            
+            if (days === 0) {
+                const hours = Math.floor(diff / (1000 * 60 * 60));
+                if (hours === 0) {
+                    const minutes = Math.floor(diff / (1000 * 60));
+                    return `${minutes} 分钟前`;
+                }
+                return `${hours} 小时前`;
+            } else if (days < 7) {
+                return `${days} 天前`;
+            } else {
+                return new Date(date).toLocaleDateString('zh-CN', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                });
+            }
+        }
+
+        function generateFileTable(containerClass) {
+            retrieveAllFiles()
+            .then((files) => {
+                files.reverse();
+                let html = '<h3>已加载文件</h3>';
+                html += '<table>';
+                html += '<tbody>';
+
+                files.forEach(file => {
+                    const data = file.file;
+                    const timeStr = formatDate(data.lastModified);
+                    
+                    html += `
+                        <tr>
+                            <td>
+                                <div class="file-info">
+                                    <div>
+                                        <a href="#" class="file-name" onclick="processFileFromDatabase('${data.name}', 99);" title="${data.name}">
+                                            ${data.name.length > 25 ? data.name.substring(0, 22) + '...' : data.name}
+                                        </a>
+                                        <div class="file-time">${timeStr}</div>
+                                    </div>
+                                    <span class="delete-btn" onclick="deleteFile('${data.name}')" title="删除">×</span>
+                                </div>
+                            </td>
+                        </tr>`;
+                });
+
+                html += '</tbody></table>';
+                document.querySelector(containerClass).innerHTML = html;
+            })
+            .catch((error) => {
+                console.error('Error retrieving files:', error);
+            });
+        }
+
+        function deleteFile(fileId) {
+            return openDatabase().then((db) => {
+                return new Promise((resolve, reject) => {
+                    const transaction = db.transaction(['files'], 'readwrite');
+                    const store = transaction.objectStore('files');
+                    const request = store.delete(fileId);
+                    
+                    request.onsuccess = () => {
+                        generateFileTable('#fileList');
+                        resolve('File deleted successfully');
+                    };
+                    
+                    request.onerror = () => {
+                        reject(request.error);
+                    };
+                });
+            });
+        }
+
+        function storeFile(file) {
+            return openDatabase().then((db) => {
+                return new Promise((resolve, reject) => {
+                    const transaction = db.transaction(['files'], 'readwrite');
+                    const store = transaction.objectStore('files');
+                    const fileData = {
+                        id: file.name,
+                        file: file
+                    };
+                    const request = store.put(fileData);
+                    
+                    request.onsuccess = () => {
+                        resolve('File stored successfully');
+                    };
+                    
+                    request.onerror = () => {
+                        reject(request.error);
+                    };
+                });
+            });
+        }
+
+        function processFile(file, index = 0) {
+            storeFile(file).then(() => {
+                const demoReader = new HLDemo.DemoReader();
+                demoReader.onready(function() {
+                    const frames = demoReader.directoryEntries[1].frames;
+                    const parsedData = parseFrames(frames);
+                    
+                    // 初始化图表
+                    const chartData = convertDemoData(parsedData);
+                    chartData.fileName = file.name;
+                    initChart(chartData);
+                    
+                    // 更新TBJ统计信息
+                    const tbjStats = analyzeTBJ(frames);
+                    document.getElementById('totalJumps').textContent = tbjStats.totalJumps;
+                    document.getElementById('successfulTBJ').textContent = tbjStats.successfulTBJ;
+                    document.getElementById('tbjSuccessRate').textContent = tbjStats.tbjSuccessRate;
+                    document.getElementById('maxConsecutiveJumps').textContent = tbjStats.maxConsecutiveJumps;
+                });
+                
+                demoReader.parse(file);
+            }).catch((error) => {
+                console.error('Error storing file:', error);
+            });
+        }
+
+        function handleFileUpload(event) {
+            const files = event.target.files;
+            if (files.length > 0) {
+                Array.from(files).forEach((file, index) => {
+                    processFile(file, index);
+                });
+                // 刷新文件列表
+                generateFileTable('#fileList');
+            }
+        }
     </script>
 </body>
 </html>
