@@ -9,6 +9,7 @@ function getAngleDifference(angle1, angle2) {
     }
     return diff;
 }
+
 function convertDemoData(inputData) {
     // 获取所有帧的集合
     const allFrames = new Set();
@@ -61,7 +62,51 @@ function convertDemoData(inputData) {
     return outputData;
 }
 
+// 添加TBJ分析功能
+function analyzeTBJ(frames) {
+    let stats = {
+        totalJumps: 0,
+        successfulTBJ: 0,
+        consecutiveJumps: 0,
+        maxConsecutiveJumps: 0,
+        tbjSuccessRate: 0
+    };
+
+    const parsedData = parseFrames(frames);
+    const jumpFrames = parsedData.jump_command_frames;
+    const groundFrames = parsedData.ground_frames;
+
+    let currentConsecutiveJumps = 0;
+    let lastJumpFrame = -1;
+
+    // 按顺序遍历所有跳跃帧
+    jumpFrames.sort((a, b) => a - b).forEach(jumpFrame => {
+        // 检查是否在地面上（在跳跃前一帧是否在地面）
+        if (groundFrames.includes(jumpFrame - 1)) {
+            stats.totalJumps++;
+            
+            // 检查是否是TBJ (距离上次跳跃只有1-2个tick)
+            if (lastJumpFrame !== -1 && jumpFrame - lastJumpFrame <= 2) {
+                stats.successfulTBJ++;
+                currentConsecutiveJumps++;
+                stats.maxConsecutiveJumps = Math.max(stats.maxConsecutiveJumps, currentConsecutiveJumps);
+            } else {
+                currentConsecutiveJumps = 1;
+            }
+            
+            lastJumpFrame = jumpFrame;
+        }
+    });
+
+    // 计算成功率
+    stats.tbjSuccessRate = stats.totalJumps > 0 ? 
+        ((stats.successfulTBJ / stats.totalJumps) * 100).toFixed(1) + '%' : 
+        '0%';
+
+    return stats;
+}
+
 // 导出函数
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { convertDemoData };
+    module.exports = { convertDemoData, analyzeTBJ };
 }

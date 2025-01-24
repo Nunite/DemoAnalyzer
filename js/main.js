@@ -1547,3 +1547,41 @@ function filterDemoTablesByConsecutiveFogs() {
         }
     });
 }
+
+// 页面加载时不自动初始化图表，等待用户操作
+window.addEventListener('load', () => {
+    // 可以选择自动加载示例文件
+    // analyzeDemo();
+});
+
+function handleFileUpload(event) {
+    const files = event.target.files;
+    for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const demoReader = new HLDemo.DemoReader();
+            demoReader.onready = function() {
+                // 获取demo数据
+                const demoData = convertDemoData(demoReader);
+                
+                // 分析TBJ数据
+                const tbjStats = analyzeTBJ(demoReader.directoryEntries[0].frames);
+                
+                // 更新TBJ统计信息显示
+                document.getElementById('totalJumps').textContent = tbjStats.totalJumps;
+                document.getElementById('successfulTBJ').textContent = tbjStats.successfulTBJ;
+                document.getElementById('tbjSuccessRate').textContent = tbjStats.tbjSuccessRate;
+                document.getElementById('maxConsecutiveJumps').textContent = tbjStats.maxConsecutiveJumps;
+                
+                // 初始化图表
+                initChart(demoData);
+                
+                // 显示文件名
+                document.getElementById('fileName').textContent = file.name;
+            };
+            demoReader.parseBuffer(e.target.result);
+        };
+        reader.readAsArrayBuffer(file);
+    }
+}

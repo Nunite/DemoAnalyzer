@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Demo Viewer</title>
+    <title>Demo Viewer - TBJ Analysis</title>
     <style>
         body {
             margin: 0;
@@ -23,85 +23,35 @@
             padding: 10px;
             height: fit-content;
         }
-        .file-list-item {
-            padding: 8px 12px;
-            margin-bottom: 8px;
-            background: white;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: all 0.2s;
-            border: 1px solid #ddd;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+        .tbj-stats {
+            position: absolute;
+            right: 240px;
+            top: 110px;
+            width: 180px;
+            background: #f5f5f5;
+            border-radius: 6px;
+            padding: 10px;
+            height: fit-content;
+            z-index: 1000;
+        }
+        .tbj-stats h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+        }
+        .tbj-stats .stat-item {
+            margin-bottom: 10px;
             font-size: 14px;
         }
-        .file-list-item:hover {
-            background: #f0f0f0;
+        .tbj-stats .stat-item .label {
+            color: #666;
+            margin-bottom: 3px;
         }
-        .file-list-item.active {
-            background: #ff6b00;
-            color: white;
-            border-color: #ff6b00;
+        .tbj-stats .stat-item .value {
+            font-weight: bold;
+            color: #333;
         }
         .main-content {
             flex: 1;
-        }
-        .preview-container {
-            position: relative;
-            height: 40px;
-            background: #fff;
-            border: 1px solid #ddd;
-            margin-bottom: 10px;
-        }
-        .preview-chart {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 1;
-        }
-        .preview-handle {
-            position: absolute;
-            top: 0;
-            left: 80px;
-            width: 20%;
-            height: 100%;
-            background: rgba(0, 0, 255, 0.2);
-            border: 2px solid rgba(0, 0, 255, 0.5);
-            cursor: move;
-            z-index: 2;
-        }
-        .combined-chart {
-            height: 700px;  /* 合并后的总高度 */
-            border: 1px solid #ddd;
-        }
-        canvas {
-            width: 100%;
-            height: 100%;
-        }
-        .tooltip {
-            position: absolute;
-            background: white;
-            padding: 8px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            font-size: 14px;
-            pointer-events: none;
-            display: none;
-        }
-        .tooltip-row {
-            display: flex;
-            justify-content: space-between;
-            margin: 2px 0;
-        }
-        .tooltip-label {
-            margin-right: 15px;
-            color: #666;
-        }
-        .tooltip-value {
-            color: #333;
         }
         .chart-container {
             position: relative;
@@ -180,13 +130,14 @@
         .command-panel {
             position: absolute;
             right: -220px;
-            top: 90px;
+            top: 120px;
             width: 180px;
             background: white;
             border: 1px solid #ddd;
             border-radius: 4px;
             padding: 10px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            z-index: 1000;
         }
         .command-option {
             margin: 5px 0;
@@ -266,11 +217,55 @@
             padding: 0;
             margin: 0;
         }
+        .tbj-info {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 6px;
+        }
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .stat-label {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        .stat-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+        }
+        .tbj-panel {
+            background: #f5f5f5;
+            border-radius: 6px;
+            padding: 10px;
+            margin-top: 20px;
+            display: none;
+        }
+        .tbj-panel h4 {
+            margin-top: 0;
+            margin-bottom: 15px;
+        }
     </style>
     <script src="js/hldemo.min.js"></script>
     <script src="js/config.js"></script>
     <script src="js/main.js"></script>
     <script src="js/demoDataConverter.js"></script>
+    <script>
+        window.onerror = function(msg, url, line, col, error) {
+            console.error('Global error:', {
+                message: msg,
+                url: url,
+                line: line,
+                column: col,
+                error: error
+            });
+            return false;
+        };
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
 </head>
 <body>
@@ -278,17 +273,26 @@
         <div class="file-list" id="fileList">
             <h3 style="margin-top: 0;">已加载文件</h3>
         </div>
+        <div class="tbj-stats">
+            <h3>工具选项</h3>
+            <div class="stat-item">
+                <div class="label">TBJ显示设置</div>
+                <div class="value">
+                    <label>
+                        <input type="checkbox" id="showTBJ" checked onchange="toggleTBJDisplay()">
+                        显示TBJ数据
+                    </label>
+                </div>
+            </div>
+        </div>
         <div class="main-content">
             <div class="control-panel">
                 <label class="upload-button">
                     <input type="file" accept=".xhr,.dem" multiple style="display: none" onchange="handleFileUpload(event)">
                     上传数据文件
                 </label>
-                <button class="analyze-button" onclick="analyzeDemo()">分析</button>
             </div>
-            
             <p class="info-text">仅支持.xhr和.dem文件格式 (20MB maximum)</p>
-            
             <div class="chart-container">
                 <div class="file-info" id="fileName"></div>
                 <div id="chartContainer" class="echarts-container"></div>
@@ -350,6 +354,25 @@
                     </div>
                 </div>
             </div>
+            <div id="tbjStats" class="tbj-panel">
+                <h4>TBJ 统计</h4>
+                <div class="stat-item">
+                    <div class="label">总跳跃次数</div>
+                    <div class="value" id="totalJumps">-</div>
+                </div>
+                <div class="stat-item">
+                    <div class="label">成功TBJ次数</div>
+                    <div class="value" id="successfulTBJ">-</div>
+                </div>
+                <div class="stat-item">
+                    <div class="label">TBJ成功率</div>
+                    <div class="value" id="tbjSuccessRate">-</div>
+                </div>
+                <div class="stat-item">
+                    <div class="label">最长连跳</div>
+                    <div class="value" id="maxConsecutiveJumps">-</div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -364,89 +387,121 @@
     <script>
         let chart = null;
         let loadedFiles = []; // 存储已加载的文件
-        let currentFileIndex = -1; // 当前显示的文件索引
-        
-        // 添加文件到列表
-        function addFileToList(file, data) {
-            const fileList = document.getElementById('fileList');
-            const fileItem = document.createElement('div');
-            fileItem.className = 'file-list-item';
-            fileItem.textContent = file.name;
-            
-            // 修复：使用正确的索引值
-            const currentIndex = loadedFiles.length;
-            fileItem.onclick = () => switchFile(currentIndex);
-            
-            // 添加title属性以显示完整文件名
-            fileItem.title = file.name;
-            
-            fileList.appendChild(fileItem);
-            
-            loadedFiles.push({
-                name: file.name,
-                data: data
-            });
-            
-            // 自动切换到新添加的文件
-            switchFile(currentIndex);
-        }
-        
-        // 切换显示的文件
-        function switchFile(index) {
-            if (index < 0 || index >= loadedFiles.length) return;
-            
-            // 更新文件列表项的激活状态
-            const items = document.querySelectorAll('.file-list-item');
-            items.forEach((item, i) => {
-                if (i === index) {
-                    item.classList.add('active');
-                } else {
-                    item.classList.remove('active');
-                }
-            });
-            
-            currentFileIndex = index;
-            const file = loadedFiles[index];
-            
-            // 更新文件名显示
-            document.getElementById('fileName').textContent = file.name;
-            
-            // 初始化图表
-            initChart(file.data);
-        }
-        
-        async function handleFileUpload(event) {
-            const files = event.target.files;
-            for (const file of files) {
-                try {
-                    if (file.name.endsWith('.dem')) {
-                        // 处理.dem文件
-                        const demoReader = new HLDemo.DemoReader();
-                        demoReader.onready(function() {
-                            const frames = demoReader.directoryEntries[1].frames;
-                            const demoData = convertDemoData(parseFrames(frames));
-                            addFileToList(file, demoData);
-                            if (loadedFiles.length === 1) {
-                                switchFile(0);
-                            }
-                        });
-                        demoReader.parse(file);
+
+        function analyzeTBJFromParsedData(parsedData) {
+            let stats = {
+                totalJumps: 0,
+                successfulTBJ: 0,
+                consecutiveJumps: 0,
+                maxConsecutiveJumps: 0,
+                tbjSuccessRate: 0
+            };
+
+            const jumpFrames = parsedData.jump_command_frames;
+            const groundFrames = parsedData.ground_frames;
+
+            // 确保数组已排序
+            jumpFrames.sort((a, b) => a - b);
+            groundFrames.sort((a, b) => a - b);
+
+            let currentConsecutiveJumps = 0;
+            let lastJumpFrame = -1;
+
+            for (let i = 0; i < jumpFrames.length; i++) {
+                const jumpFrame = jumpFrames[i];
+                
+                // 检查跳跃前是否在地面上
+                const isOnGround = groundFrames.some(gf => gf === jumpFrame - 1);
+                
+                if (isOnGround) {
+                    stats.totalJumps++;
+                    
+                    // 检查是否是TBJ (距离上次跳跃只有1-2个tick)
+                    if (lastJumpFrame !== -1 && jumpFrame - lastJumpFrame <= 2) {
+                        stats.successfulTBJ++;
+                        currentConsecutiveJumps++;
+                        stats.maxConsecutiveJumps = Math.max(stats.maxConsecutiveJumps, currentConsecutiveJumps);
                     } else {
-                        // 处理.xhr文件
-                        const reader = new FileReader();
-                        reader.onload = function(e) {
-                            const data = JSON.parse(e.target.result);
-                            addFileToList(file, data);
-                            if (loadedFiles.length === 1) {
-                                switchFile(0);
-                            }
-                        };
-                        reader.readAsText(file);
+                        currentConsecutiveJumps = 1;
                     }
-                } catch (error) {
-                    console.error('Error processing file:', file.name, error);
-                    alert(`处理文件 ${file.name} 时出错: ${error.message}`);
+                    
+                    lastJumpFrame = jumpFrame;
                 }
+            }
+
+            // 计算成功率
+            stats.tbjSuccessRate = stats.totalJumps > 0 ? 
+                ((stats.successfulTBJ / stats.totalJumps) * 100).toFixed(1) + '%' : 
+                '0%';
+
+            return stats;
+        }
+
+        function handleFileUpload(event) {
+            console.log('文件上传开始');
+            const files = event.target.files;
+            console.log('文件数量:', files.length);
+            
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                console.log('处理文件:', file.name);
+                
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    console.log('文件已加载:', file.name);
+                    const demoReader = new HLDemo.DemoReader();
+                    
+                    demoReader.onready = function() {
+                        console.log('Demo解析成功');
+                        try {
+                            const frames = demoReader.directoryEntries[1].frames;
+                            console.log('帧数:', frames.length);
+                            
+                            // 使用main.js中的parseFrames处理数据
+                            const parsedData = parseFrames(frames);
+                            console.log('解析后的数据:', parsedData);
+                            
+                            // 使用解析后的数据分析TBJ
+                            const tbjStats = analyzeTBJFromParsedData(parsedData);
+                            console.log('TBJ统计:', tbjStats);
+                            
+                            // 更新TBJ统计信息显示
+                            document.getElementById('totalJumps').textContent = tbjStats.totalJumps;
+                            document.getElementById('successfulTBJ').textContent = tbjStats.successfulTBJ;
+                            document.getElementById('tbjSuccessRate').textContent = tbjStats.tbjSuccessRate;
+                            document.getElementById('maxConsecutiveJumps').textContent = tbjStats.maxConsecutiveJumps;
+                            
+                            // 初始化图表
+                            const chartData = convertDemoData(parsedData);
+                            initChart(chartData);
+                            
+                            // 显示文件名
+                            document.getElementById('fileName').textContent = file.name;
+                        } catch (error) {
+                            console.error('处理Demo时出错:', error);
+                        }
+                    };
+                    
+                    demoReader.onerror = function(error) {
+                        console.error('Demo读取错误:', error);
+                    };
+
+                    try {
+                        const blob = new Blob([e.target.result]);
+                        const demoFile = new File([blob], file.name);
+                        console.log('开始解析demo文件...');
+                        demoReader.parse(demoFile);
+                    } catch (error) {
+                        console.error('创建demo文件时出错:', error);
+                    }
+                };
+                
+                reader.onerror = function(error) {
+                    console.error('文件读取错误:', error);
+                };
+                
+                reader.readAsArrayBuffer(file);
             }
         }
 
@@ -749,6 +804,21 @@
                 chart.setOption(option);
             }
         }
+
+        function toggleTBJDisplay() {
+            const showTBJ = document.getElementById('showTBJ').checked;
+            const tbjStats = document.getElementById('tbjStats');
+            if (showTBJ) {
+                tbjStats.style.display = 'block';
+            } else {
+                tbjStats.style.display = 'none';
+            }
+        }
+
+        // 页面加载时初始化TBJ面板显示状态
+        window.addEventListener('load', () => {
+            toggleTBJDisplay();
+        });
     </script>
 </body>
 </html>
