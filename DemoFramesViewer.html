@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demo Frames 导出器</title>
+    <script src="js/jquery-3.7.1.slim.min.js"></script>
+    <script src="js/hldemo.min.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/main.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            margin-top: 20px;
+        }
+        #status {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .success {
+            background-color: #dff0d8;
+            color: #3c763d;
+            border: 1px solid #d6e9c6;
+        }
+        .error {
+            background-color: #f2dede;
+            color: #a94442;
+            border: 1px solid #ebccd1;
+        }
+        .btn {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .btn:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <h1>Demo Frames 导出器</h1>
+    <div class="container">
+        <input type="file" id="demoFile" accept=".dem" />
+        <button onclick="processDemoFile()" class="btn">导出JSON</button>
+    </div>
+    <div id="status"></div>
+
+    <script>
+        async function processDemoFile() {
+            const fileInput = document.getElementById('demoFile');
+            const statusDiv = document.getElementById('status');
+            
+            if (!fileInput.files.length) {
+                alert('请先选择一个.dem文件');
+                return;
+            }
+
+            const file = fileInput.files[0];
+            const demoReader = new HLDemo.DemoReader();
+            
+            try {
+                demoReader.onready(function() {
+                    const frames = demoReader.directoryEntries[1].frames;
+                    const jumps_data = parseFramesToGraph(frames);
+                    const jsonData = JSON.stringify(jumps_data, null, 2);
+                    
+                    // 创建Blob对象
+                    const blob = new Blob([jsonData], { type: 'application/json' });
+                    
+                    // 创建下载链接
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = file.name.replace('.dem', '_frames.json');
+                    
+                    // 触发下载
+                    document.body.appendChild(a);
+                    a.click();
+                    
+                    // 清理
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                    
+                    // 显示成功消息
+                    statusDiv.textContent = '导出成功！文件已保存为: ' + a.download;
+                    statusDiv.className = 'success';
+                });
+                
+                demoReader.parse(file);
+            } catch (error) {
+                statusDiv.textContent = '处理文件时发生错误: ' + error.message;
+                statusDiv.className = 'error';
+                console.error(error);
+            }
+        }
+    </script>
+</body>
+</html>

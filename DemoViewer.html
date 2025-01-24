@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demo数据查看器</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .file-input {
+            margin-bottom: 20px;
+        }
+        .charts-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .chart-wrapper {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .data-table th, .data-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        .data-table th {
+            background-color: #f8f9fa;
+        }
+        .data-table tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        #frameSlider {
+            width: 100%;
+            margin: 20px 0;
+        }
+        .slider-container {
+            margin: 20px 0;
+        }
+        .frame-info {
+            margin: 10px 0;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Demo数据查看器</h1>
+        <div class="file-input">
+            <input type="file" id="demoFile" accept=".json">
+        </div>
+        <div class="slider-container">
+            <input type="range" id="frameSlider" min="0" max="100" value="0">
+            <div class="frame-info" id="frameInfo"></div>
+        </div>
+        <div class="charts-container">
+            <div class="chart-wrapper">
+                <canvas id="yawChart"></canvas>
+            </div>
+            <div class="chart-wrapper">
+                <canvas id="movementChart"></canvas>
+            </div>
+        </div>
+        <table class="data-table" id="dataTable">
+            <thead>
+                <tr>
+                    <th>帧</th>
+                    <th>偏航角</th>
+                    <th>偏航速度</th>
+                    <th>地面状态</th>
+                    <th>动作状态</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <script>
+        let demoData = null;
+        let yawChart = null;
+        let movementChart = null;
+
+        document.getElementById('demoFile').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const jsonData = JSON.parse(e.target.result);
+                        demoData = jsonData;
+                        initializeVisualization(demoData);
+                    } catch (error) {
+                        console.error('Error parsing JSON:', error);
+                        alert('文件解析错误，请确保是正确的JSON格式');
+                    }
+                };
+                reader.readAsText(file);
+            }
+        });
+
+        function initializeVisualization(data) {
+            // 更新滑块范围
+            const slider = document.getElementById('frameSlider');
+            slider.min = 0;
+            slider.max = data.data.length - 1;
+            slider.value = 0;
+
+            // 初始化图表
+            initializeCharts(data);
+            updateFrameInfo(0);
+            updateDataTable(data);
+
+            // 添加滑块事件监听
+            slider.addEventListener('input', function(e) {
+                updateFrameInfo(parseInt(e.target.value));
+            });
+        }
+
+        function initializeCharts(data) {
+            // 准备数据
+            const frames = data.data.map(d => d.frame);
+            const yawAngles = data.data.map(d => d.yawAngle);
+            const yawSpeeds = data.data.map(d => d.yawSpeed);
+
+            // 偏航角和偏航速度图表
+            if (yawChart) yawChart.destroy();
+            const yawCtx = document.getElementById('yawChart').getContext('2d');
+            yawChart = new Chart(yawCtx, {
+                type: 'line',
+                data: {
+                    labels: frames,
+                    datasets: [{
+                        label: '偏航角',
+                        data: yawAngles,
+                        borderColor: 'rgb(75, 192, 192)',
+                        tension: 0.1
+                    }, {
+                        label: '偏航速度',
+                        data: yawSpeeds,
+                        borderColor: 'rgb(255, 99, 132)',
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: '偏航角和偏航速度'
+                        }
+                    }
+                }
+            });
+
+            // 移动状态图表
+            if (movementChart) movementChart.destroy();
+            const movementCtx = document.getElementById('movementChart').getContext('2d');
+            movementChart = new Chart(movementCtx, {
+                type: 'line',
+                data: {
+                    labels: frames,
+                    datasets: [{
+                        label: '跳跃',
+                        data: data.data.map(d => d.jump),
+                        borderColor: 'rgb(54, 162, 235)',
+                        stepped: true
+                    }, {
+                        label: '蹲下',
+                        data: data.data.map(d => d.duck),
+                        borderColor: 'rgb(255, 206, 86)',
+                        stepped: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: '动作状态'
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateFrameInfo(frameIndex) {
+            if (!demoData) return;
+            
+            const frame = demoData.data[frameIndex];
+            const frameInfo = document.getElementById('frameInfo');
+            
+            frameInfo.innerHTML = `
+                <strong>帧 ${frame.frame}</strong><br>
+                偏航角: ${frame.yawAngle.toFixed(2)}°<br>
+                偏航速度: ${frame.yawSpeed.toFixed(2)}<br>
+                地面状态: ${frame.ground ? '在地面上' : '在空中'}<br>
+                移动状态: ${getMovementStatus(frame)}<br>
+                动作状态: ${getActionStatus(frame)}
+            `;
+        }
+
+        function getMovementStatus(frame) {
+            const movements = [];
+            if (frame.moveForward) movements.push('前进');
+            if (frame.moveBack) movements.push('后退');
+            if (frame.moveLeft) movements.push('左移');
+            if (frame.moveRight) movements.push('右移');
+            return movements.length > 0 ? movements.join(', ') : '静止';
+        }
+
+        function getActionStatus(frame) {
+            const actions = [];
+            if (frame.jump) actions.push('跳跃');
+            if (frame.duck) actions.push('蹲下');
+            if (frame.use) actions.push('使用');
+            return actions.length > 0 ? actions.join(', ') : '无';
+        }
+
+        function updateDataTable(data) {
+            const tbody = document.querySelector('#dataTable tbody');
+            tbody.innerHTML = '';
+
+            // 只显示前100帧数据，避免表格过长
+            const displayData = data.data.slice(0, 100);
+            
+            displayData.forEach(frame => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${frame.frame}</td>
+                    <td>${frame.yawAngle.toFixed(2)}°</td>
+                    <td>${frame.yawSpeed.toFixed(2)}</td>
+                    <td>${frame.ground ? '地面' : '空中'}</td>
+                    <td>${getActionStatus(frame)}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+    </script>
+</body>
+</html>

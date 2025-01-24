@@ -701,134 +701,10 @@ function generateDemoTable(jump_stats, jumps_data, index, style='consecutive_fog
     }
 }
 
-function convertDemoToJson(frames, fileName) {
-    const result = {
-        fileName: fileName,
-        data: []
-    };
-
-    // 用于存储上一帧的yaw角度和状态
-    let prevYawAngle = null;
-    let currentButtons = 0;
-
-    // 辅助函数：保留5位小数
-    const toFixed5 = (num) => Number(num.toFixed(5));
-
-    // 辅助函数：计算最短角度差
-    const getShortestAngleDifference = (angle1, angle2) => {
-        let diff = angle1 - angle2;
-        // 将差值限制在 -180 到 180 度之间
-        while (diff > 180) diff -= 360;
-        while (diff < -180) diff += 360;
-        return diff;
-    };
-
-    // 定义按键常量（Half-Life 引擎的按键定义）
-    const IN_ATTACK    = 1;      // (0000 0000 0000 0001)
-    const IN_JUMP      = 2;      // (0000 0000 0000 0010)
-    const IN_DUCK      = 4;      // (0000 0000 0000 0100)
-    const IN_FORWARD   = 8;      // (0000 0000 0000 1000)
-    const IN_BACK      = 16;     // (0000 0000 0001 0000)
-    const IN_USE       = 32;     // (0000 0000 0010 0000)
-    const IN_MOVELEFT  = 512;    // (0000 0010 0000 0000)
-    const IN_MOVERIGHT = 1024;   // (0000 0100 0000 0000)
-    const IN_ATTACK2   = 2048;   // (0000 1000 0000 0000)
-
-    // 预处理：先收集所有帧的命令
-    const frameCommands = new Map();
-    frames.forEach(frame => {
-        if (frame.type === 3 && frame.command) {
-            const nextFrame = frame.frame + 1;  // 将命令应用到下一帧
-            if (!frameCommands.has(nextFrame)) {
-                frameCommands.set(nextFrame, new Set());
-            }
-            if (frame.command.includes('+jump') || frame.command.includes('+use')) {
-                frameCommands.get(nextFrame).add(frame.command);
-            }
-        }
-    });
-
-    frames.forEach((frame) => {
-        // 处理网络消息
-        if (frame.type === 1 && frame.demoInfo) {
-            // 安全地获取属性值
-            const demoInfo = frame.demoInfo || {};
-            const userCmd = demoInfo.userCmd || {};
-            const refParams = demoInfo.refParams || {};
-            const viewangles = refParams.viewangles || [0, 0, 0];
-            const currentYawAngle = toFixed5(viewangles[1] || 0);
-
-            // 计算yawSpeed（第一帧时为0，之后计算最短角度差）
-            let yawSpeed = 0;
-            if (prevYawAngle !== null) {
-                yawSpeed = toFixed5(getShortestAngleDifference(currentYawAngle, prevYawAngle));
-            }
-            prevYawAngle = currentYawAngle;
-
-            // 更新按键状态
-            currentButtons = userCmd.buttons || 0;
-
-            // 检查移动指令
-            const forwardMove = toFixed5(userCmd.forwardmove || 0);
-            const sideMove = toFixed5(userCmd.sidemove || 0);
-
-            // 获取当前帧的命令
-            const commands = frameCommands.get(frame.frame) || new Set();
-            const hasJumpCommand = commands.has('+jump');
-            const hasUseCommand = commands.has('+use');
-
-            // 调试信息
-            if (frame.frame % 100 === 0) {
-                console.log('Frame:', frame.frame);
-                console.log('按键状态:', currentButtons.toString(2).padStart(16, '0'));
-                console.log('userCmd:', userCmd);
-                console.log('Commands:', Array.from(commands));
-            }
-
-            const frameData = {
-                frame: frame.frame || 0,
-                yawAngle: currentYawAngle,
-                yawSpeed: yawSpeed,
-                moveLeft: Boolean(currentButtons & IN_MOVELEFT) || sideMove < 0 ? 1 : 0,
-                moveRight: Boolean(currentButtons & IN_MOVERIGHT) || sideMove > 0 ? 1 : 0,
-                moveForward: Boolean(currentButtons & IN_FORWARD) || forwardMove > 0 ? 1 : 0,
-                moveBack: Boolean(currentButtons & IN_BACK) || forwardMove < 0 ? 1 : 0,
-                use: Boolean(currentButtons & IN_USE) || hasUseCommand ? 1 : 0,
-                jump: Boolean(currentButtons & IN_JUMP) || hasJumpCommand ? 1 : 0,
-                ground: refParams.onground === 1,
-                duck: Boolean(currentButtons & IN_DUCK) ? 1 : 0,
-                forward: forwardMove > 0,
-                back: forwardMove < 0,
-                attack: Boolean(currentButtons & IN_ATTACK) || Boolean(currentButtons & IN_ATTACK2) ? 1 : 0
-            };
-            result.data.push(frameData);
-        }
-    });
-
-    return result;
-}
-
-function downloadJson(data, filename) {
-    const jsonStr = JSON.stringify(data, null, 4);
-    const blob = new Blob([jsonStr], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename.replace('.dem', '.json');
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-}
-
 function parseDemo(file, index, is_archive=false) {
     const demoReader = new HLDemo.DemoReader();
     demoReader.onready(async function() {
         const frames = demoReader.directoryEntries[1].frames;
-        
-        // 添加转换和下载功能
-        const jsonData = convertDemoToJson(frames, file.name);
-        //downloadJson(jsonData, file.name);
         
         //console.log(demoReader);
         
@@ -1015,9 +891,29 @@ function parseFrames(frames) {
     const jumps_data = {};
     const ground_frames = [];
     const jump_command_frames = [];
+    const duck_command_frames = [];
+    const moveleft_command_frames = [];
+    const moveright_command_frames = [];
+    const moveforward_command_frames = [];
+    const moveback_command_frames = [];
+    const use_command_frames = [];
+    const yaw_angles = [{}];
+    
     let jumping = false;
     let jump_frame = false;
     let jump_started_frame = false;
+    let ducking = false;
+    let duckStartFrame = -1;
+    let movingLeft = false;
+    let moveLeftStartFrame = -1;
+    let movingRight = false;
+    let moveRightStartFrame = -1;
+    let movingForward = false;
+    let moveForwardStartFrame = -1;
+    let movingBack = false;
+    let moveBackStartFrame = -1;
+    let using = false;
+    let useStartFrame = -1;
     let prev_frame;
     let prev_jump_frame = false;
     let prev_land = false;
@@ -1035,6 +931,102 @@ function parseFrames(frames) {
         if (frame.type === 3) {
             // type 3 (ConsoleCommand)
             
+            // 处理蹲下命令
+            if (frame.command.includes('+duck')) {
+                ducking = true;
+                duckStartFrame = frame.frame;
+            } else if (frame.command.includes('-duck')) {
+                if (ducking && duckStartFrame !== -1) {
+                    for (let i = duckStartFrame; i <= frame.frame; i++) {
+                        if (!duck_command_frames.includes(i)) {
+                            duck_command_frames.push(i);
+                        }
+                    }
+                }
+                ducking = false;
+                duckStartFrame = -1;
+            }
+
+            // 处理向左移动命令
+            if (frame.command.includes('+moveleft')) {
+                movingLeft = true;
+                moveLeftStartFrame = frame.frame;
+            } else if (frame.command.includes('-moveleft')) {
+                if (movingLeft && moveLeftStartFrame !== -1) {
+                    for (let i = moveLeftStartFrame; i <= frame.frame; i++) {
+                        if (!moveleft_command_frames.includes(i)) {
+                            moveleft_command_frames.push(i);
+                        }
+                    }
+                }
+                movingLeft = false;
+                moveLeftStartFrame = -1;
+            }
+
+            // 处理向右移动命令
+            if (frame.command.includes('+moveright')) {
+                movingRight = true;
+                moveRightStartFrame = frame.frame;
+            } else if (frame.command.includes('-moveright')) {
+                if (movingRight && moveRightStartFrame !== -1) {
+                    for (let i = moveRightStartFrame; i <= frame.frame; i++) {
+                        if (!moveright_command_frames.includes(i)) {
+                            moveright_command_frames.push(i);
+                        }
+                    }
+                }
+                movingRight = false;
+                moveRightStartFrame = -1;
+            }
+
+            // 处理向前移动命令
+            if (frame.command.includes('+forward')) {
+                movingForward = true;
+                moveForwardStartFrame = frame.frame;
+            } else if (frame.command.includes('-forward')) {
+                if (movingForward && moveForwardStartFrame !== -1) {
+                    for (let i = moveForwardStartFrame; i <= frame.frame; i++) {
+                        if (!moveforward_command_frames.includes(i)) {
+                            moveforward_command_frames.push(i);
+                        }
+                    }
+                }
+                movingForward = false;
+                moveForwardStartFrame = -1;
+            }
+
+            // 处理向后移动命令
+            if (frame.command.includes('+back')) {
+                movingBack = true;
+                moveBackStartFrame = frame.frame;
+            } else if (frame.command.includes('-back')) {
+                if (movingBack && moveBackStartFrame !== -1) {
+                    for (let i = moveBackStartFrame; i <= frame.frame; i++) {
+                        if (!moveback_command_frames.includes(i)) {
+                            moveback_command_frames.push(i);
+                        }
+                    }
+                }
+                movingBack = false;
+                moveBackStartFrame = -1;
+            }
+
+            // 处理use命令
+            if (frame.command.includes('+use')) {
+                using = true;
+                useStartFrame = frame.frame;
+            } else if (frame.command.includes('-use')) {
+                if (using && useStartFrame !== -1) {
+                    for (let i = useStartFrame; i <= frame.frame; i++) {
+                        if (!use_command_frames.includes(i)) {
+                            use_command_frames.push(i);
+                        }
+                    }
+                }
+                using = false;
+                useStartFrame = -1;
+            }
+            
             if (frame.command.includes('+jump')) {
                 jump_command_frames.push(frame.frame);
                 
@@ -1048,9 +1040,15 @@ function parseFrames(frames) {
                 }
             }
         }
+       
+            if (frame.demoInfo && frame.demoInfo.userCmd && frame.demoInfo.userCmd.viewangles) {
+                yaw_angles[0][frame.frame] = Number(frame.demoInfo.userCmd.viewangles[1].toFixed(5));
+            }
         
         if (frame.type === 1) {
-            // frame type 1 (NetworkMessages)
+            // type 1 (NetworkMessages)
+            
+
             
             if (frame.demoInfo.refParams.onground === 1) {
                 on_ground = true;
@@ -1123,14 +1121,235 @@ function parseFrames(frames) {
     
     return {
         data: jumps_data,
-        ground_frames,
+        use_command_frames,
+        moveleft_command_frames,
+        moveright_command_frames,
+        moveforward_command_frames,
+        moveback_command_frames,
         jump_command_frames,
+        ground_frames,
+        duck_command_frames,
+        yaw_angles,
         timer: {
             start: { frame: timer_started_frame.frame, time: timer_started_frame.time },
             end: { frame: timer_ended_frame.frame, time: timer_ended_frame.time },
         },
         user_info: demo_user_info
     };
+}
+
+function parseFramesToGraph(frames) {
+    const result = {
+        data: []
+    };
+    
+    let frameCount = 0;
+    frames.forEach(frame => {
+        if (frame.type === 1 && frame.demoInfo && frame.demoInfo.userCmd) { // NetworkMessages
+            const frameData = {
+                frame: frameCount++,
+                yawAngle: frame.demoInfo.userCmd.viewangles ? Number(frame.demoInfo.userCmd.viewangles[1].toFixed(5)) : 0,
+                yawSpeed: frame.demoInfo.userCmd.yawspeed || 0.0,
+                moveLeft: frame.demoInfo.userCmd.sidemove < 0 ? 1 : 0,
+                moveRight: frame.demoInfo.userCmd.sidemove > 0 ? 1 : 0,
+                moveForward: frame.demoInfo.userCmd.forwardmove > 0 ? 1 : 0,
+                moveBack: frame.demoInfo.userCmd.forwardmove < 0 ? 1 : 0,
+                use: frame.demoInfo.userCmd.buttons & (1 << 5) ? 1 : 0,
+                jump: frame.demoInfo.userCmd.buttons & (1 << 1) ? 1 : 0,
+                ground: frame.demoInfo.refParams.onground === 1,
+                duck: frame.demoInfo.userCmd.buttons & (1 << 2) ? 1 : 0,
+                forward: frame.demoInfo.userCmd.forwardmove > 0,
+                back: frame.demoInfo.userCmd.forwardmove < 0
+            };
+            result.data.push(frameData);
+        }
+    });
+    
+    return result;
+}
+
+function getJumpStats(jumps) {
+    const data = {
+        jump_tick_counts: [],
+        fog_counts: {
+            1: 0, 2: 0, 3: 0, 4: 0,
+            5: 0, 6: 0, 7: 0, 8: 0,
+            9: 0, 10: 0
+        },
+        consecutive_jump_ticks: {
+            'tick1': { 'sets': [] },
+            'tick2': { 'sets': [] },
+            'tick3': { 'sets': [] },
+            'tick4': { 'sets': [] },
+            'tick5': { 'sets': [] }
+        },
+        consecutive_fogs: {}
+    };
+
+    let prev_jump_tick = null;
+    let current_set = null;
+    let non_lj_count = 0;
+
+    // Variables to track consecutive FOGs
+    let prev_fog = null;
+    let fog_streak = { fog: null, count: 0 };
+
+    jumps.forEach((jump, index) => {
+        if (jump.type === 2) {
+            non_lj_count++;
+
+            // Count jumps at each tick
+            data.jump_tick_counts[jump.first_jump_at_tick] = (data.jump_tick_counts[jump.first_jump_at_tick] || 0) + 1;
+
+            // Count fogs
+            data.fog_counts[jump.fog] = (data.fog_counts[jump.fog] || 0) + 1;
+
+            // If the first_jump_at_tick is different from the previous one, start a new set
+            if (prev_jump_tick !== jump.first_jump_at_tick) {
+                if (current_set && current_set.amount > 1) {
+                    // If the current set had more than one jump, add it to consecutive_jump_ticks
+                    data.consecutive_jump_ticks['tick' + prev_jump_tick] = data.consecutive_jump_ticks['tick' + prev_jump_tick] || { sets: [] };
+                    data.consecutive_jump_ticks['tick' + prev_jump_tick].sets.push(current_set);
+                }
+                current_set = { fogs: {}, amount: 0, jumpoffs: [] };
+            }
+
+            // Update fog count and amount for the current set
+            current_set.fogs[jump.fog] = (current_set.fogs[jump.fog] || 0) + 1;
+            current_set.amount++;
+            current_set.jumpoffs.push(jump.jumpoff);
+
+            // Track consecutive FOGs
+            if (jump.fog === prev_fog) {
+                fog_streak.count++;
+            } else {
+                if (fog_streak.count > 1) {
+                    // Only store streaks with a count greater than 1
+                    data.consecutive_fogs[fog_streak.fog] = data.consecutive_fogs[fog_streak.fog] || [];
+                    data.consecutive_fogs[fog_streak.fog].push(fog_streak.count);
+                }
+                // Start a new streak
+                fog_streak = { fog: jump.fog, count: 1 };
+            }
+
+            // Update previous jump tick and fog
+            prev_jump_tick = jump.first_jump_at_tick;
+            prev_fog = jump.fog;
+        }
+
+        // Finalize the last fog streak after the last jump
+        if (index === jumps.length - 1 && fog_streak.count > 1) {
+            data.consecutive_fogs[fog_streak.fog] = data.consecutive_fogs[fog_streak.fog] || [];
+            data.consecutive_fogs[fog_streak.fog].push(fog_streak.count);
+        }
+    });
+
+    // Finalize the last set if it has more than one jump
+    if (current_set && current_set.amount > 1) {
+        data.consecutive_jump_ticks['tick' + prev_jump_tick] = data.consecutive_jump_ticks['tick' + prev_jump_tick] || { sets: [] };
+        data.consecutive_jump_ticks['tick' + prev_jump_tick].sets.push(current_set);
+    }
+
+    // Store non_lj_count
+    data.non_lj_count = non_lj_count;
+    return data;
+}
+
+function readFloat32(data) {
+    const dataView = new DataView(data.buffer);
+    return dataView.getFloat32(0, true); // true for little-endian
+}
+
+function getFloat32(arr, offset) {
+    const buffer = new ArrayBuffer(4); // Create a 4-byte buffer
+    const view = new DataView(buffer);
+
+    // Set the buffer to the 4 bytes from the array
+    arr.slice(offset, offset + 4).forEach((b, i) => view.setUint8(i, b));
+
+    return view.getFloat32(0, true); // Read the 32-bit float (little-endian)
+}
+
+function parseMessage(data) {
+    const type_id = data[0];
+    if (type_id >= 64) { /* UserMessage */
+        const message = new TextDecoder().decode(data);
+        return message;
+    } else if (type_id === 14) { /* SVC_DELTADESCRIPTION */
+        c//onsole.log(14);
+    } else if (type_id === 41) { /* SVC_DELTAPACKETENTITIES */
+        //console.log(41);
+    } else if (type_id === 40) { /* SVC_PACKETENTITIES  */
+        //console.log(40);
+    } else if (type_id === 13) { /* SVC_UPDATEUSERINFO  */
+        const raw_user_info = new TextDecoder().decode(data);
+        const parts = raw_user_info.split('\\');
+        parts.shift();
+        const obj = {};
+        for (let i = 0; i < parts.length; i += 2) {
+            const key = parts[i];
+            let value = parts[i + 1];
+            if (value && value.includes('\u0000')) {
+                // null char
+                value = value.split('\u0000')[0];
+            }
+            obj[key] = value;
+        }
+        return obj;
+    } else if (type_id === 7) { /* SVC_TIME */
+        const svc_time = readFloat32(data.slice(1));
+    } else {
+        //console.error(`Unknown message type: ${type_id}`);
+    }
+}
+
+function parseDemo(file, index, is_archive=false) {
+    const demoReader = new HLDemo.DemoReader();
+    demoReader.onready(async function() {
+        const frames = demoReader.directoryEntries[1].frames;
+        
+        //console.log(demoReader);
+        
+        const jumps_data = parseFrames(frames);
+        jumps_data.demo_size = demoReader.demoSize;
+        jumps_data.map = demoReader.header.mapName;
+        jumps_data.filename = file.name;
+        
+        const jumps = parseJumpData(jumps_data);
+        const jump_stats = getJumpStats(jumps);
+        
+        /*
+        console.log(jumps_data);
+        console.log(jump_stats);
+        */
+        
+        const analyzer_style = $('input[name="analyzer-setting"]:checked').attr('id');
+        const generate_graphs = $('#generate_graphs').is(':checked');
+
+        generateDemoTable(jump_stats, jumps_data, index, analyzer_style, generate_graphs);
+
+        try {
+            const retrieve = await retrieveFile(file.name);
+            if (retrieve && !retrieve.metadata.uploaded) { 
+                const meta = {
+                    demo_meta: jumps_data.user_info,
+                    uploaded: + new Date()
+                };
+
+                updateDemoMetadata(file.name, meta)
+                    .then((message) => {
+                        console.log(message);
+                    })
+                    .catch((error) => {
+                        console.error(error);
+                    });
+            }
+        } catch (error) {
+            console.error('Error retrieving file from database:', error);
+        }
+    });
+    
+    demoReader.parse(file);
 }
 
 function formatFileSize(sizeInBytes) {
@@ -1255,7 +1474,7 @@ function searchTable() {
             } else {
                 $(this).hide();
             }
-    });
+        });
 }
 
 function filterDemoTablesByConsecutiveFogs() {
@@ -1288,106 +1507,3 @@ function filterDemoTablesByConsecutiveFogs() {
         }
     });
 }
-
-// 添加新的转换相关函数
-function convertDemoFile(file) {
-    const demoReader = new HLDemo.DemoReader();
-    
-    // 添加错误处理
-    demoReader.onerror = function(error) {
-        const fileItem = document.querySelector(`#converter-file-list .file-item[data-filename="${file.name}"]`);
-        if (fileItem) {
-            const status = fileItem.querySelector('.status');
-            status.textContent = '转换失败: ' + error;
-            status.style.color = '#dc3545';
-        }
-        console.error('Demo reading error:', error);
-    };
-
-    demoReader.onready(function() {
-        try {
-            const frames = demoReader.directoryEntries[1].frames;
-            if (!frames || frames.length === 0) {
-                throw new Error('无法读取demo帧数据');
-            }
-
-            const jsonData = convertDemoToJson(frames, file.name);
-            //downloadJson(jsonData, file.name);
-            
-            // 更新转换状态
-            const fileItem = document.querySelector(`#converter-file-list .file-item[data-filename="${file.name}"]`);
-            if (fileItem) {
-                const status = fileItem.querySelector('.status');
-                status.textContent = '转换完成';
-                status.style.color = '#28a745';
-            }
-        } catch (error) {
-            const fileItem = document.querySelector(`#converter-file-list .file-item[data-filename="${file.name}"]`);
-            if (fileItem) {
-                const status = fileItem.querySelector('.status');
-                status.textContent = '转换失败: ' + error.message;
-                status.style.color = '#dc3545';
-            }
-            console.error('Conversion error:', error);
-        }
-    });
-
-    try {
-        // 更新状态为正在转换
-        const fileItem = document.querySelector(`#converter-file-list .file-item[data-filename="${file.name}"]`);
-        if (fileItem) {
-            const status = fileItem.querySelector('.status');
-            status.textContent = '正在转换...';
-            status.style.color = '#007bff';
-        }
-        
-        // 开始解析
-        demoReader.parse(file);
-    } catch (error) {
-        const fileItem = document.querySelector(`#converter-file-list .file-item[data-filename="${file.name}"]`);
-        if (fileItem) {
-            const status = fileItem.querySelector('.status');
-            status.textContent = '转换失败: ' + error.message;
-            status.style.color = '#dc3545';
-        }
-        console.error('Parse error:', error);
-    }
-}
-
-function handleConverterFiles(files) {
-    const fileList = document.getElementById('converter-file-list');
-    fileList.innerHTML = ''; // 清空现有列表
-
-    Array.from(files).forEach(file => {
-        // 创建文件项
-        const fileItem = document.createElement('div');
-        fileItem.className = 'file-item';
-        fileItem.setAttribute('data-filename', file.name);
-        
-        const fileName = document.createElement('span');
-        fileName.className = 'filename';
-        fileName.textContent = file.name;
-        
-        const status = document.createElement('span');
-        status.className = 'status';
-        status.textContent = '准备转换...';
-        
-        fileItem.appendChild(fileName);
-        fileItem.appendChild(status);
-        fileList.appendChild(fileItem);
-        
-        // 开始转换
-        convertDemoFile(file);
-    });
-}
-
-// 在文档加载完成后添加事件监听
-document.addEventListener('DOMContentLoaded', function() {
-    // 添加转换器的文件输入监听
-    const converterInput = document.getElementById('converter-file-input');
-    if (converterInput) {
-        converterInput.addEventListener('change', function(e) {
-            handleConverterFiles(e.target.files);
-        });
-    }
-});
