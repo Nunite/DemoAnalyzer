@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Demo Viewer</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background-color: #fff;
+        }
+        .container {
+            display: flex;
+            padding: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+            gap: 20px;
+        }
+        .file-list {
+            width: 200px;
+            background: #f5f5f5;
+            border-radius: 6px;
+            padding: 10px;
+            height: fit-content;
+        }
+        .file-list-item {
+            padding: 8px 12px;
+            margin-bottom: 8px;
+            background: white;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid #ddd;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-size: 14px;
+        }
+        .file-list-item:hover {
+            background: #f0f0f0;
+        }
+        .file-list-item.active {
+            background: #ff6b00;
+            color: white;
+            border-color: #ff6b00;
+        }
+        .main-content {
+            flex: 1;
+        }
+        .preview-container {
+            position: relative;
+            height: 40px;
+            background: #fff;
+            border: 1px solid #ddd;
+            margin-bottom: 10px;
+        }
+        .preview-chart {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+        .preview-handle {
+            position: absolute;
+            top: 0;
+            left: 80px;
+            width: 20%;
+            height: 100%;
+            background: rgba(0, 0, 255, 0.2);
+            border: 2px solid rgba(0, 0, 255, 0.5);
+            cursor: move;
+            z-index: 2;
+        }
+        .combined-chart {
+            height: 700px;  /* 合并后的总高度 */
+            border: 1px solid #ddd;
+        }
+        canvas {
+            width: 100%;
+            height: 100%;
+        }
+        .tooltip {
+            position: absolute;
+            background: white;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+            pointer-events: none;
+            display: none;
+        }
+        .tooltip-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 2px 0;
+        }
+        .tooltip-label {
+            margin-right: 15px;
+            color: #666;
+        }
+        .tooltip-value {
+            color: #333;
+        }
+        .chart-container {
+            position: relative;
+            border: 1px solid #ddd;
+            margin-bottom: -1px;
+        }
+        .commands-chart {
+            height: 300px;
+            border-top: none;
+        }
+        .preview-handle-grip {
+            position: absolute;
+            width: 8px;
+            height: 100%;
+            background: rgba(0, 0, 255, 0.5);
+            cursor: col-resize;
+        }
+        .preview-handle-grip.left {
+            left: 0;
+        }
+        .preview-handle-grip.right {
+            right: 0;
+        }
+        .frame-display {
+            text-align: center;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+        .hover-frame {
+            position: absolute;
+            top: -20px;
+            font-size: 12px;
+            color: #333;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 2px 5px;
+            border-radius: 3px;
+            display: none;
+        }
+        .frame-numbers {
+            position: absolute;
+            bottom: -20px;
+            left: 0;
+            right: 0;
+            height: 20px;
+        }
+        .vertical-line {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 1px;
+            background-color: rgba(0, 0, 0, 0.5);
+            pointer-events: none;
+            display: none;
+        }
+        .frame-info {
+            position: absolute;
+            background: white;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-size: 12px;
+            pointer-events: none;
+            display: none;
+        }
+        .current-frame {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: white;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 10px;
+            font-size: 14px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .command-panel {
+            position: absolute;
+            right: -220px;
+            top: 90px;
+            width: 180px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .command-option {
+            margin: 5px 0;
+            display: flex;
+            align-items: center;
+        }
+        .command-option label {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+        .color-indicator {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            margin-right: 8px;
+            cursor: pointer;
+            vertical-align: middle;
+        }
+        .chart-container {
+            background: white;
+            border-radius: 6px;
+            padding: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .file-info {
+            text-align: center;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .control-panel {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            justify-content: center;
+        }
+        .upload-button {
+            background-color: #f0f0f0;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .upload-button:hover {
+            background-color: #e0e0e0;
+        }
+        .analyze-button {
+            background-color: #ff6b00;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .analyze-button:hover {
+            background-color: #ff5500;
+        }
+        .info-text {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+            margin: 10px 0;
+        }
+        .echarts-container {
+            height: 670px;
+            width: 100%;
+        }
+        .color-picker {
+            width: 50px;
+            height: 20px;
+            border: none;
+            padding: 0;
+            margin: 0;
+        }
+    </style>
+    <script src="js/hldemo.min.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/main.js"></script>
+    <script src="js/demoDataConverter.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="file-list" id="fileList">
+            <h3 style="margin-top: 0;">已加载文件</h3>
+        </div>
+        <div class="main-content">
+            <div class="control-panel">
+                <label class="upload-button">
+                    <input type="file" accept=".xhr,.dem" multiple style="display: none" onchange="handleFileUpload(event)">
+                    上传数据文件
+                </label>
+                <button class="analyze-button" onclick="analyzeDemo()">分析</button>
+            </div>
+            
+            <p class="info-text">仅支持.xhr和.dem文件格式 (20MB maximum)</p>
+            
+            <div class="chart-container">
+                <div class="file-info" id="fileName"></div>
+                <div id="chartContainer" class="echarts-container"></div>
+                <div class="command-panel">
+                    <div class="command-option">
+                        <input type="color" class="color-picker" id="yaw-speed-color" value="#1E90FF" style="display: none;">
+                        <span class="color-indicator" style="background: #1E90FF" onclick="document.getElementById('yaw-speed-color').click()"></span>
+                        <label>Yaw Speed</label>
+                    </div>
+                    <div class="command-option">
+                        <input type="color" class="color-picker" id="use-color" value="#FF4500" style="display: none;">
+                        <span class="color-indicator" style="background: #FF4500" onclick="document.getElementById('use-color').click()"></span>
+                        <label>use</label>
+                    </div>
+                    <div class="command-option">
+                        <input type="color" class="color-picker" id="moveleft-color" value="#32CD32" style="display: none;">
+                        <span class="color-indicator" style="background: #32CD32" onclick="document.getElementById('moveleft-color').click()"></span>
+                        <label>moveleft</label>
+                    </div>
+                    <div class="command-option">
+                        <input type="color" class="color-picker" id="moveright-color" value="#9370DB" style="display: none;">
+                        <span class="color-indicator" style="background: #9370DB" onclick="document.getElementById('moveright-color').click()"></span>
+                        <label>moveright</label>
+                    </div>
+                    <div class="command-option">
+                        <input type="color" class="color-picker" id="moveforward-color" value="#FFD700" style="display: none;">
+                        <span class="color-indicator" style="background: #FFD700" onclick="document.getElementById('moveforward-color').click()"></span>
+                        <label>moveforward</label>
+                    </div>
+                    <div class="command-option">
+                        <input type="color" class="color-picker" id="moveback-color" value="#FF69B4" style="display: none;">
+                        <span class="color-indicator" style="background: #FF69B4" onclick="document.getElementById('moveback-color').click()"></span>
+                        <label>moveback</label>
+                    </div>
+                    <div class="command-option">
+                        <input type="color" class="color-picker" id="jump-color" value="#00CED1" style="display: none;">
+                        <span class="color-indicator" style="background: #00CED1" onclick="document.getElementById('jump-color').click()"></span>
+                        <label>jump</label>
+                    </div>
+                    <div class="command-option">
+                        <input type="color" class="color-picker" id="ground-color" value="#808080" style="display: none;">
+                        <span class="color-indicator" style="background: #808080" onclick="document.getElementById('ground-color').click()"></span>
+                        <label>ground</label>
+                    </div>
+                    <div class="command-option">
+                        <input type="color" class="color-picker" id="duck-color" value="#8B4513" style="display: none;">
+                        <span class="color-indicator" style="background: #8B4513" onclick="document.getElementById('duck-color').click()"></span>
+                        <label>duck</label>
+                    </div>
+                    <div class="command-option">
+                        <input type="color" class="color-picker" id="forward-color" value="#4682B4" style="display: none;">
+                        <span class="color-indicator" style="background: #4682B4" onclick="document.getElementById('forward-color').click()"></span>
+                        <label>forward</label>
+                    </div>
+                    <div class="command-option">
+                        <input type="color" class="color-picker" id="back-color" value="#CD853F" style="display: none;">
+                        <span class="color-indicator" style="background: #CD853F" onclick="document.getElementById('back-color').click()"></span>
+                        <label>back</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let chart = null;
+        let loadedFiles = []; // 存储已加载的文件
+        let currentFileIndex = -1; // 当前显示的文件索引
+        
+        // 添加文件到列表
+        function addFileToList(file, data) {
+            const fileList = document.getElementById('fileList');
+            const fileItem = document.createElement('div');
+            fileItem.className = 'file-list-item';
+            fileItem.textContent = file.name;
+            
+            // 修复：使用正确的索引值
+            const currentIndex = loadedFiles.length;
+            fileItem.onclick = () => switchFile(currentIndex);
+            
+            // 添加title属性以显示完整文件名
+            fileItem.title = file.name;
+            
+            fileList.appendChild(fileItem);
+            
+            loadedFiles.push({
+                name: file.name,
+                data: data
+            });
+            
+            // 自动切换到新添加的文件
+            switchFile(currentIndex);
+        }
+        
+        // 切换显示的文件
+        function switchFile(index) {
+            if (index < 0 || index >= loadedFiles.length) return;
+            
+            // 更新文件列表项的激活状态
+            const items = document.querySelectorAll('.file-list-item');
+            items.forEach((item, i) => {
+                if (i === index) {
+                    item.classList.add('active');
+                } else {
+                    item.classList.remove('active');
+                }
+            });
+            
+            currentFileIndex = index;
+            const file = loadedFiles[index];
+            
+            // 更新文件名显示
+            document.getElementById('fileName').textContent = file.name;
+            
+            // 初始化图表
+            initChart(file.data);
+        }
+        
+        async function handleFileUpload(event) {
+            const files = event.target.files;
+            for (const file of files) {
+                try {
+                    if (file.name.endsWith('.dem')) {
+                        // 处理.dem文件
+                        const demoReader = new HLDemo.DemoReader();
+                        demoReader.onready(function() {
+                            const frames = demoReader.directoryEntries[1].frames;
+                            const demoData = convertDemoData(parseFrames(frames));
+                            addFileToList(file, demoData);
+                            if (loadedFiles.length === 1) {
+                                switchFile(0);
+                            }
+                        });
+                        demoReader.parse(file);
+                    } else {
+                        // 处理.xhr文件
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            const data = JSON.parse(e.target.result);
+                            addFileToList(file, data);
+                            if (loadedFiles.length === 1) {
+                                switchFile(0);
+                            }
+                        };
+                        reader.readAsText(file);
+                    }
+                } catch (error) {
+                    console.error('Error processing file:', file.name, error);
+                    alert(`处理文件 ${file.name} 时出错: ${error.message}`);
+                }
+            }
+        }
+
+        function initChart(demoData) {
+            chart = echarts.init(document.getElementById('chartContainer'));
+            
+            // 处理数据
+            const frames = demoData.data.map(d => d.frame);
+            const yawSpeeds = demoData.data.map(d => d.yawSpeed);
+            
+            const option = {
+                title: [
+                    { top: 205, left: 5, text: "Yaw Speed", textStyle: { fontSize: 12 } },
+                    { top: 345, left: 5, text: "use", textStyle: { fontSize: 12 } },
+                    { top: 375, left: 5, text: "moveleft", textStyle: { fontSize: 12 } },
+                    { top: 405, left: 5, text: "moveright", textStyle: { fontSize: 12 } },
+                    { top: 435, left: 5, text: "moveforward", textStyle: { fontSize: 12 } },
+                    { top: 465, left: 5, text: "moveback", textStyle: { fontSize: 12 } },
+                    { top: 495, left: 5, text: "jump", textStyle: { fontSize: 12 } },
+                    { top: 525, left: 5, text: "ground", textStyle: { fontSize: 12 } },
+                    { top: 555, left: 5, text: "duck", textStyle: { fontSize: 12 } },
+                    { top: 585, left: 5, text: "forward", textStyle: { fontSize: 12 } },
+                    { top: 615, left: 5, text: "back", textStyle: { fontSize: 12 } }
+                ],
+                tooltip: {
+                    trigger: 'axis',
+                    formatter: function(params) {
+                        // 找到当前帧的索引
+                        const frameIndex = params[0].dataIndex;
+                        const frame = frames[frameIndex];
+                        
+                        // 构建显示信息
+                        let result = `Frame: ${frame}<br/>`;
+                        
+                        // 获取所有数据系列的值
+                        const seriesValues = {
+                            'Yaw Speed': yawSpeeds[frameIndex],
+                            'use': demoData.data[frameIndex].use ? 'Yes' : 'No',
+                            'moveleft': demoData.data[frameIndex].moveleft ? 'Yes' : 'No',
+                            'moveright': demoData.data[frameIndex].moveright ? 'Yes' : 'No',
+                            'moveforward': demoData.data[frameIndex].moveforward ? 'Yes' : 'No',
+                            'moveback': demoData.data[frameIndex].moveback ? 'Yes' : 'No',
+                            'jump': demoData.data[frameIndex].jump ? 'Yes' : 'No',
+                            'ground': demoData.data[frameIndex].ground ? 'Yes' : 'No',
+                            'duck': demoData.data[frameIndex].duck ? 'Yes' : 'No',
+                            'forward': demoData.data[frameIndex].forward ? 'Yes' : 'No',
+                            'back': demoData.data[frameIndex].back ? 'Yes' : 'No'
+                        };
+
+                        // 添加每个系列的值
+                        Object.entries(seriesValues).forEach(([name, value]) => {
+                            if (typeof value === 'number') {
+                                result += `${name}: ${value.toFixed(6)}<br/>`;
+                            } else {
+                                result += `${name}: ${value}<br/>`;
+                            }
+                        });
+
+                        return result;
+                    },
+                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                    borderColor: '#ccc',
+                    borderWidth: 1,
+                    padding: [5, 10],
+                    textStyle: {
+                        color: '#333'
+                    }
+                },
+                dataZoom: [{
+                    type: 'slider',
+                    xAxisIndex: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+                    top: 50,
+                    height: 20,
+                    zoomOnMouseWheel: 'ctrl',
+                    moveOnMouseWheel: true,
+                    moveOnMouseMove: false
+                }, {
+                    type: 'inside',
+                    xAxisIndex: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+                    zoomOnMouseWheel: 'ctrl',
+                    moveOnMouseWheel: true,
+                    moveOnMouseMove: false
+                }],
+                grid: [
+                    { left: 120, right: 20, top: 90, height: 250, borderWidth: 2, show: true },
+                    { left: 120, right: 20, height: 30, top: 340, borderWidth: 2, show: true },
+                    { left: 120, right: 20, height: 30, top: 370, borderWidth: 2, show: true },
+                    { left: 120, right: 20, height: 30, top: 400, borderWidth: 2, show: true },
+                    { left: 120, right: 20, height: 30, top: 430, borderWidth: 2, show: true },
+                    { left: 120, right: 20, height: 30, top: 460, borderWidth: 2, show: true },
+                    { left: 120, right: 20, height: 30, top: 490, borderWidth: 2, show: true },
+                    { left: 120, right: 20, height: 30, top: 520, borderWidth: 2, show: true },
+                    { left: 120, right: 20, height: 30, top: 550, borderWidth: 2, show: true },
+                    { left: 120, right: 20, height: 30, top: 580, borderWidth: 2, show: true },
+                    { left: 120, right: 20, height: 30, top: 610, borderWidth: 2, show: true }
+                ],
+                xAxis: Array.from({ length: 11 }, (_, i) => ({
+                    type: 'category',
+                    data: frames,
+                    gridIndex: i,
+                    show: i === 10
+                })),
+                yAxis: Array.from({ length: 11 }, (_, i) => ({
+                    type: 'value',
+                    gridIndex: i,
+                    show: i === 0,
+                    min: i === 0 ? null : 0,
+                    max: i === 0 ? null : 1
+                })),
+                series: [
+                    {
+                        name: 'Yaw Speed',
+                        type: 'line',
+                        data: yawSpeeds,
+                        animation: false,
+                        show: true,
+                        itemStyle: {
+                            color: document.getElementById('yaw-speed-color').value
+                        }
+                    },
+                    {
+                        name: 'use',
+                        type: 'bar',
+                        xAxisIndex: 1,
+                        yAxisIndex: 1,
+                        data: demoData.data.map(d => d.use),
+                        animation: false,
+                        show: true,
+                        itemStyle: {
+                            color: document.getElementById('use-color').value
+                        }
+                    },
+                    {
+                        name: 'moveleft',
+                        type: 'bar',
+                        xAxisIndex: 2,
+                        yAxisIndex: 2,
+                        data: demoData.data.map(d => d.moveLeft),
+                        animation: false,
+                        show: true,
+                        itemStyle: {
+                            color: document.getElementById('moveleft-color').value
+                        }
+                    },
+                    {
+                        name: 'moveright',
+                        type: 'bar',
+                        xAxisIndex: 3,
+                        yAxisIndex: 3,
+                        data: demoData.data.map(d => d.moveRight),
+                        animation: false,
+                        show: true,
+                        itemStyle: {
+                            color: document.getElementById('moveright-color').value
+                        }
+                    },
+                    {
+                        name: 'moveforward',
+                        type: 'bar',
+                        xAxisIndex: 4,
+                        yAxisIndex: 4,
+                        data: demoData.data.map(d => d.moveForward),
+                        animation: false,
+                        show: true,
+                        itemStyle: {
+                            color: document.getElementById('moveforward-color').value
+                        }
+                    },
+                    {
+                        name: 'moveback',
+                        type: 'bar',
+                        xAxisIndex: 5,
+                        yAxisIndex: 5,
+                        data: demoData.data.map(d => d.moveBack),
+                        animation: false,
+                        show: true,
+                        itemStyle: {
+                            color: document.getElementById('moveback-color').value
+                        }
+                    },
+                    {
+                        name: 'jump',
+                        type: 'bar',
+                        xAxisIndex: 6,
+                        yAxisIndex: 6,
+                        data: demoData.data.map(d => d.jump),
+                        animation: false,
+                        show: true,
+                        itemStyle: {
+                            color: document.getElementById('jump-color').value
+                        }
+                    },
+                    {
+                        name: 'ground',
+                        type: 'bar',
+                        xAxisIndex: 7,
+                        yAxisIndex: 7,
+                        data: demoData.data.map(d => d.ground ? 1 : 0),
+                        animation: false,
+                        show: true,
+                        itemStyle: {
+                            color: document.getElementById('ground-color').value
+                        }
+                    },
+                    {
+                        name: 'duck',
+                        type: 'bar',
+                        xAxisIndex: 8,
+                        yAxisIndex: 8,
+                        data: demoData.data.map(d => d.duck),
+                        animation: false,
+                        show: true,
+                        itemStyle: {
+                            color: document.getElementById('duck-color').value
+                        }
+                    },
+                    {
+                        name: 'forward',
+                        type: 'bar',
+                        xAxisIndex: 9,
+                        yAxisIndex: 9,
+                        data: demoData.data.map(d => d.forward ? 1 : 0),
+                        animation: false,
+                        show: true,
+                        itemStyle: {
+                            color: document.getElementById('forward-color').value
+                        }
+                    },
+                    {
+                        name: 'back',
+                        type: 'bar',
+                        xAxisIndex: 10,
+                        yAxisIndex: 10,
+                        data: demoData.data.map(d => d.back ? 1 : 0),
+                        animation: false,
+                        show: true,
+                        itemStyle: {
+                            color: document.getElementById('back-color').value
+                        }
+                    }
+                ]
+            };
+            
+            chart.setOption(option);
+        }
+
+        function analyzeDemo() {
+            // 加载示例 .xhr 文件
+            fetch('hrbg_rabbitrun_outside_0121.59.xhr')
+                .then(response => response.json())
+                .then(demoData => {
+                    document.getElementById('fileName').textContent = `File name: ${demoData.fileName}`;
+                    initChart(demoData);
+                })
+                .catch(error => {
+                    alert("Could not load example demo file");
+                });
+        }
+
+        // 页面加载时不自动初始化图表，等待用户操作
+        window.addEventListener('load', () => {
+            // 可以选择自动加载示例文件
+            // analyzeDemo();
+        });
+
+        // 响应窗口大小变化
+        window.addEventListener('resize', () => {
+            chart && chart.resize();
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const colorPickers = document.querySelectorAll('.color-picker');
+            
+            // 加载保存的颜色
+            colorPickers.forEach(picker => {
+                const savedColor = localStorage.getItem(picker.id);
+                if (savedColor) {
+                    picker.value = savedColor;
+                    picker.nextElementSibling.style.background = savedColor;
+                    const seriesName = picker.parentNode.querySelector('label').textContent.trim();
+                    updateChartColor(seriesName, savedColor);
+                }
+
+                picker.addEventListener('input', function() {
+                    const selectedColor = this.value;
+                    this.nextElementSibling.style.background = selectedColor;
+                    localStorage.setItem(this.id, selectedColor);
+                    const seriesName = this.parentNode.querySelector('label').textContent.trim();
+                    updateChartColor(seriesName, selectedColor);
+                });
+            });
+        });
+
+        function updateChartColor(seriesName, color) {
+            if (!chart) return;
+            const option = chart.getOption();
+            const seriesIndex = option.series.findIndex(s => s.name === seriesName);
+            if (seriesIndex !== -1) {
+                option.series[seriesIndex].itemStyle.color = color;
+                chart.setOption(option);
+            }
+        }
+    </script>
+</body>
+</html>
