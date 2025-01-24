@@ -80,7 +80,7 @@
                     const url = window.URL.createObjectURL(blob);
                     const a = document.createElement('a');
                     a.href = url;
-                    a.download = file.name.replace('.dem', '_frames.json');
+                    a.download = file.name.replace('.dem', '.xhr');
                     
                     // 触发下载
                     document.body.appendChild(a);

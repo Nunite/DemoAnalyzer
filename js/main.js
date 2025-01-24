@@ -1144,12 +1144,16 @@ function parseFramesToGraph(frames) {
     };
     
     let frameCount = 0;
+    let prevYawAngle = null;
+    
     frames.forEach(frame => {
         if (frame.type === 1 && frame.demoInfo && frame.demoInfo.userCmd) { // NetworkMessages
+            const currentYawAngle = frame.demoInfo.userCmd.viewangles ? Number(frame.demoInfo.userCmd.viewangles[1].toFixed(5)) : 0;
+            
             const frameData = {
-                frame: frameCount++,
-                yawAngle: frame.demoInfo.userCmd.viewangles ? Number(frame.demoInfo.userCmd.viewangles[1].toFixed(5)) : 0,
-                yawSpeed: frame.demoInfo.userCmd.yawspeed || 0.0,
+                frame: frameCount,
+                yawAngle: currentYawAngle,
+                yawSpeed: prevYawAngle !== null ? Number((currentYawAngle - prevYawAngle).toFixed(5)) : 0,
                 moveLeft: frame.demoInfo.userCmd.sidemove < 0 ? 1 : 0,
                 moveRight: frame.demoInfo.userCmd.sidemove > 0 ? 1 : 0,
                 moveForward: frame.demoInfo.userCmd.forwardmove > 0 ? 1 : 0,
@@ -1161,7 +1165,10 @@ function parseFramesToGraph(frames) {
                 forward: frame.demoInfo.userCmd.forwardmove > 0,
                 back: frame.demoInfo.userCmd.forwardmove < 0
             };
+            
             result.data.push(frameData);
+            prevYawAngle = currentYawAngle;
+            frameCount++;
         }
     });
     
