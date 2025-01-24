@@ -8,6 +8,7 @@
     <script src="js/hldemo.min.js"></script>
     <script src="js/config.js"></script>
     <script src="js/main.js"></script>
+    <script src="js/demoDataConverter.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -70,8 +71,7 @@
             try {
                 demoReader.onready(function() {
                     const frames = demoReader.directoryEntries[1].frames;
-                    //const jumps_data = parseFramesToGraph(frames);
-                    const jumps_data = parseFrames(frames);
+                    const jumps_data = convertDemoData(parseFrames(frames));
                     const jsonData = JSON.stringify(jumps_data, null, 2);
                     
                     // 创建Blob对象
