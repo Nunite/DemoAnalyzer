@@ -266,6 +266,9 @@
             padding: 0;
             margin: 0;
         }
+        .debug-option {
+            margin-top: 10px;
+        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
     <script src="js/hldemo.min.js"></script>
@@ -283,6 +286,12 @@
                     上传数据文件
                 </label>
                 <button class="analyze-button" onclick="analyzeDemo()">分析</button>
+                <div class="debug-option" style="margin-top: 10px;">
+                    <label>
+                        <input type="checkbox" id="debugMode" checked>
+                        调试模式（自动下载JSON文件）
+                    </label>
+                </div>
             </div>
             
             <p class="info-text">仅支持.json和.dem文件格式 (20MB maximum)</p>
@@ -438,6 +447,21 @@
                             try {
                                 const frames = demoReader.directoryEntries[1].frames;
                                 const jsonData = convertDemoToJson(frames, file.name);
+                                
+                                // 如果开启了调试模式，自动下载JSON文件
+                                if (document.getElementById('debugMode').checked) {
+                                    const jsonStr = JSON.stringify(jsonData, null, 2);
+                                    const blob = new Blob([jsonStr], { type: 'application/json' });
+                                    const url = URL.createObjectURL(blob);
+                                    const a = document.createElement('a');
+                                    a.href = url;
+                                    a.download = file.name.replace('.dem', '.json');
+                                    document.body.appendChild(a);
+                                    a.click();
+                                    document.body.removeChild(a);
+                                    URL.revokeObjectURL(url);
+                                }
+
                                 addFileToList(file, jsonData);
                                 if (loadedFiles.length === 1) {
                                     switchFile(0);

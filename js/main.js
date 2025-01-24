@@ -707,8 +707,9 @@ function convertDemoToJson(frames, fileName) {
         data: []
     };
 
-    // 用于存储上一帧的yaw角度
+    // 用于存储上一帧的yaw角度和状态
     let prevYawAngle = null;
+    let currentButtons = 0;
 
     // 辅助函数：保留5位小数
     const toFixed5 = (num) => Number(num.toFixed(5));
@@ -722,11 +723,37 @@ function convertDemoToJson(frames, fileName) {
         return diff;
     };
 
+    // 定义按键常量（Half-Life 引擎的按键定义）
+    const IN_ATTACK    = 1;      // (0000 0000 0000 0001)
+    const IN_JUMP      = 2;      // (0000 0000 0000 0010)
+    const IN_DUCK      = 4;      // (0000 0000 0000 0100)
+    const IN_FORWARD   = 8;      // (0000 0000 0000 1000)
+    const IN_BACK      = 16;     // (0000 0000 0001 0000)
+    const IN_USE       = 32;     // (0000 0000 0010 0000)
+    const IN_MOVELEFT  = 512;    // (0000 0010 0000 0000)
+    const IN_MOVERIGHT = 1024;   // (0000 0100 0000 0000)
+    const IN_ATTACK2   = 2048;   // (0000 1000 0000 0000)
+
+    // 预处理：先收集所有帧的命令
+    const frameCommands = new Map();
+    frames.forEach(frame => {
+        if (frame.type === 3 && frame.command) {
+            const nextFrame = frame.frame + 1;  // 将命令应用到下一帧
+            if (!frameCommands.has(nextFrame)) {
+                frameCommands.set(nextFrame, new Set());
+            }
+            if (frame.command.includes('+jump') || frame.command.includes('+use')) {
+                frameCommands.get(nextFrame).add(frame.command);
+            }
+        }
+    });
+
     frames.forEach((frame) => {
-        if (frame.type === 1 && frame.demoInfo) { // NetworkMessages
+        // 处理网络消息
+        if (frame.type === 1 && frame.demoInfo) {
             // 安全地获取属性值
             const demoInfo = frame.demoInfo || {};
-            const cmd = demoInfo.cmd || {};
+            const userCmd = demoInfo.userCmd || {};
             const refParams = demoInfo.refParams || {};
             const viewangles = refParams.viewangles || [0, 0, 0];
             const currentYawAngle = toFixed5(viewangles[1] || 0);
@@ -738,32 +765,41 @@ function convertDemoToJson(frames, fileName) {
             }
             prevYawAngle = currentYawAngle;
 
-            // 检查移动指令
-            const forwardMove = toFixed5(cmd.forwardmove || 0);
-            const sideMove = toFixed5(cmd.sidemove || 0);
-            const buttons = cmd.buttons || 0;
+            // 更新按键状态
+            currentButtons = userCmd.buttons || 0;
 
-            // 定义按键常量
-            const IN_ATTACK = 1 << 0;
-            const IN_JUMP   = 1 << 1;
-            const IN_DUCK   = 1 << 2;
-            const IN_USE    = 1 << 5;
+            // 检查移动指令
+            const forwardMove = toFixed5(userCmd.forwardmove || 0);
+            const sideMove = toFixed5(userCmd.sidemove || 0);
+
+            // 获取当前帧的命令
+            const commands = frameCommands.get(frame.frame) || new Set();
+            const hasJumpCommand = commands.has('+jump');
+            const hasUseCommand = commands.has('+use');
+
+            // 调试信息
+            if (frame.frame % 100 === 0) {
+                console.log('Frame:', frame.frame);
+                console.log('按键状态:', currentButtons.toString(2).padStart(16, '0'));
+                console.log('userCmd:', userCmd);
+                console.log('Commands:', Array.from(commands));
+            }
 
             const frameData = {
                 frame: frame.frame || 0,
                 yawAngle: currentYawAngle,
                 yawSpeed: yawSpeed,
-                moveLeft: sideMove < 0 ? 1 : 0,
-                moveRight: sideMove > 0 ? 1 : 0,
-                moveForward: forwardMove > 0 ? 1 : 0,
-                moveBack: forwardMove < 0 ? 1 : 0,
-                use: (buttons & IN_USE) ? 1 : 0,
-                jump: (buttons & IN_JUMP) ? 1 : 0,
+                moveLeft: Boolean(currentButtons & IN_MOVELEFT) || sideMove < 0 ? 1 : 0,
+                moveRight: Boolean(currentButtons & IN_MOVERIGHT) || sideMove > 0 ? 1 : 0,
+                moveForward: Boolean(currentButtons & IN_FORWARD) || forwardMove > 0 ? 1 : 0,
+                moveBack: Boolean(currentButtons & IN_BACK) || forwardMove < 0 ? 1 : 0,
+                use: Boolean(currentButtons & IN_USE) || hasUseCommand ? 1 : 0,
+                jump: Boolean(currentButtons & IN_JUMP) || hasJumpCommand ? 1 : 0,
                 ground: refParams.onground === 1,
-                duck: (buttons & IN_DUCK) ? 1 : 0,
+                duck: Boolean(currentButtons & IN_DUCK) ? 1 : 0,
                 forward: forwardMove > 0,
                 back: forwardMove < 0,
-                attack: (buttons & IN_ATTACK) ? 1 : 0
+                attack: Boolean(currentButtons & IN_ATTACK) || Boolean(currentButtons & IN_ATTACK2) ? 1 : 0
             };
             result.data.push(frameData);
         }
