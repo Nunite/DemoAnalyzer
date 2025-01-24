@@ -1,7 +1,18 @@
+// 辅助函数：计算两个角度之间的最小差值
+function getAngleDifference(angle1, angle2) {
+    let diff = angle1 - angle2;
+    // 处理角度循环
+    if (diff > 180) {
+        diff -= 360;
+    } else if (diff < -180) {
+        diff += 360;
+    }
+    return diff;
+}
 function convertDemoData(inputData) {
     // 获取所有帧的集合
     const allFrames = new Set();
-    
+
     // 收集所有出现的帧号
     Object.keys(inputData.yaw_angles).forEach(frame => allFrames.add(parseInt(frame)));
     inputData.use_command_frames.forEach(frame => allFrames.add(frame));
@@ -25,8 +36,8 @@ function convertDemoData(inputData) {
     let previousYawAngle = null;
     sortedFrames.forEach(frame => {
         const yawAngle = inputData.yaw_angles[frame] || 0;
-        const yawSpeed = previousYawAngle !== null ? Number((yawAngle - previousYawAngle).toFixed(5)) : 0;
-        
+        const yawSpeed = previousYawAngle !== null ? Number(getAngleDifference(yawAngle,previousYawAngle).toFixed(5)) : 0;
+
         const frameData = {
             frame: frame,
             yawAngle: yawAngle,
