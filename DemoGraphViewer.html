@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Demo Viewer - TBJ Analysis</title>
     <style>
@@ -8,7 +9,7 @@
             overflow-y: scroll;
             scrollbar-gutter: stable;
         }
-        
+
         body {
             margin: 0;
             padding: 0;
@@ -16,40 +17,60 @@
             background-color: #fff;
             overflow-x: hidden;
         }
+
         .container {
             display: flex;
-            flex-direction: column;
-            align-items: center;
+            justify-content: flex-start;
+            align-items: flex-start;
             width: 100%;
-            min-height: 100vh;
             padding: 20px;
             box-sizing: border-box;
+            gap: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
         }
+
         .file-list {
             width: 300px;
             background: #f5f5f5;
             border-radius: 6px;
-            padding: 10px;
+            padding: 15px;
             height: fit-content;
         }
+
+        .file-list-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .file-list-header h3 {
+            margin: 0;
+        }
+
         .file-list table {
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 1rem;
             font-size: 14px;
         }
+
         .file-list td {
             padding: 8px;
             border-bottom: 1px solid #ddd;
         }
+
         .file-list tr:hover {
             background-color: #f0f0f0;
         }
+
         .file-list .file-info {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
         }
+
         .file-list .file-name {
             color: #007bff;
             text-decoration: none;
@@ -59,14 +80,17 @@
             max-width: 200px;
             display: block;
         }
+
         .file-list .file-name:hover {
             text-decoration: underline;
         }
+
         .file-list .file-time {
             color: #666;
             font-size: 12px;
             margin-top: 4px;
         }
+
         .delete-btn {
             color: #dc3545;
             cursor: pointer;
@@ -75,9 +99,11 @@
             margin-left: 8px;
             flex-shrink: 0;
         }
+
         .delete-btn:hover {
             color: #bd2130;
         }
+
         .tbj-stats {
             position: absolute;
             right: 370px;
@@ -89,173 +115,87 @@
             height: fit-content;
             z-index: 1000;
         }
+
         .tbj-stats h3 {
             margin-top: 0;
             margin-bottom: 15px;
         }
+
         .tbj-stats .stat-item {
             margin-bottom: 10px;
             font-size: 14px;
         }
+
         .tbj-stats .stat-item .label {
             color: #666;
             margin-bottom: 3px;
         }
+
         .tbj-stats .stat-item .value {
             font-weight: bold;
             color: #333;
         }
+
         .main-content {
             flex: 1;
+            max-width: 1000px;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
+
         .chart-container {
-            position: relative;
-            border: 1px solid #ddd;
-            margin-bottom: -1px;
-        }
-        .commands-chart {
-            height: 300px;
-            border-top: none;
-        }
-        .preview-handle-grip {
-            position: absolute;
-            width: 8px;
-            height: 100%;
-            background: rgba(0, 0, 255, 0.5);
-            cursor: col-resize;
-        }
-        .preview-handle-grip.left {
-            left: 0;
-        }
-        .preview-handle-grip.right {
-            right: 0;
-        }
-        .frame-display {
-            text-align: center;
-            font-size: 16px;
-            margin-top: 10px;
-        }
-        .hover-frame {
-            position: absolute;
-            top: -20px;
-            font-size: 12px;
-            color: #333;
-            background: rgba(255, 255, 255, 0.8);
-            padding: 2px 5px;
-            border-radius: 3px;
-            display: none;
-        }
-        .frame-numbers {
-            position: absolute;
-            bottom: -20px;
-            left: 0;
-            right: 0;
-            height: 20px;
-        }
-        .vertical-line {
-            position: absolute;
-            top: 0;
-            bottom: 0;
-            width: 1px;
-            background-color: rgba(0, 0, 0, 0.5);
-            pointer-events: none;
-            display: none;
-        }
-        .frame-info {
-            position: absolute;
-            background: white;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            padding: 4px 8px;
-            font-size: 12px;
-            pointer-events: none;
-            display: none;
-        }
-        .current-frame {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: white;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            padding: 10px;
-            font-size: 14px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .command-panel {
-            position: absolute;
-            right: -220px;
-            top: 120px;
-            width: 180px;
-            background: white;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            padding: 10px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            z-index: 1000;
-        }
-        .command-option {
-            margin: 5px 0;
-            display: flex;
-            align-items: center;
-        }
-        .command-option label {
-            display: flex;
-            align-items: center;
-            cursor: pointer;
-        }
-        .color-indicator {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            margin-right: 8px;
-            cursor: pointer;
-            vertical-align: middle;
-        }
-        .chart-container {
+            width: 135%;
+            margin: 100px 0 0 0;  /* 添加顶部边距 */
             background: white;
             border-radius: 6px;
-            padding: 10px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            overflow: visible;  /* 确保内容不被裁剪 */
+            padding: 15px;
+            box-shadow: 0 4px 50px rgba(250, 0, 0, 0.1);
+            box-sizing: border-box;
         }
+
         .echarts-container {
             width: 100%;
-            height: 800px;  /* 增加图表高度 */
-            margin: 0 auto;
+            height: 700px;
+            margin: 0;
         }
+
         .control-panel {
             display: flex;
+            justify-content: center;
             gap: 10px;
             margin-bottom: 20px;
-            justify-content: center;
+            width: 100%;
         }
+
         .file-list {
             width: 100%;
             max-height: calc(100vh - 40px);
             overflow-y: auto;
             overflow-x: hidden;
         }
+
         #fileListContent {
             width: 100%;
         }
+
         .file-list table {
             width: 100%;
             border-collapse: collapse;
         }
+
         .file-list td {
             padding: 8px;
             word-break: break-word;
         }
+
         .command-option {
             display: flex;
             align-items: center;
             margin: 8px 0;
             gap: 8px;
         }
+
         .color-indicator {
             width: 20px;
             height: 20px;
@@ -263,35 +203,42 @@
             border-radius: 4px;
             cursor: pointer;
         }
+
         .color-picker {
             display: none;
         }
+
         .command-option label {
             flex: 1;
             margin: 0;
             cursor: pointer;
         }
+
         .tbj-info {
             margin-bottom: 20px;
             padding: 15px;
             background: #f5f5f5;
             border-radius: 6px;
         }
+
         .stat-item {
             display: flex;
             flex-direction: column;
             align-items: center;
         }
+
         .stat-label {
             font-size: 14px;
             color: #666;
             margin-bottom: 5px;
         }
+
         .stat-value {
             font-size: 18px;
             font-weight: bold;
             color: #333;
         }
+
         .tbj-panel {
             background: #f5f5f5;
             border-radius: 6px;
@@ -299,43 +246,54 @@
             margin-top: 20px;
             display: none;
         }
+
         .tbj-panel h4 {
             margin-top: 0;
             margin-bottom: 15px;
         }
+
         #tbjStats {
             display: none;
         }
+
         .form-check-input {
             margin-right: 5px;
         }
+
         .analyze-demo {
             cursor: pointer;
         }
+
         .tool-option {
             margin: 10px 0;
         }
+
         .tool-option label {
             display: block;
             margin-bottom: 5px;
             font-weight: bold;
         }
+
         .option-content {
             margin-left: 10px;
         }
+
         .color-option {
             display: flex;
             align-items: center;
             margin: 5px 0;
         }
+
         .color-option input[type="color"] {
             margin-right: 10px;
             width: 30px;
             height: 20px;
         }
+
         .color-option label {
             font-weight: normal;
         }
+
         .sidebar {
             position: fixed;
             left: -300px;
@@ -345,15 +303,17 @@
             background: #f5f5f5;
             transition: left 0.3s ease;
             z-index: 1001;
-            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
             padding: 20px;
             box-sizing: border-box;
             overflow-y: auto;
             overflow-x: hidden;
         }
+
         .sidebar.open {
             left: 0;
         }
+
         .sidebar-toggle {
             position: fixed;
             left: 0;
@@ -365,11 +325,13 @@
             padding: 10px;
             cursor: pointer;
             z-index: 1002;
-            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
         }
+
         .sidebar-toggle:hover {
             background: #e0e0e0;
         }
+
         .right-panel {
             position: fixed;
             right: -300px;
@@ -379,14 +341,16 @@
             background: #f5f5f5;
             transition: right 0.3s ease;
             z-index: 1001;
-            box-shadow: -2px 0 5px rgba(0,0,0,0.1);
+            box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
             padding: 20px;
             box-sizing: border-box;
             overflow-y: auto;
         }
+
         .right-panel.open {
             right: 0;
         }
+
         .right-panel-toggle {
             position: fixed;
             right: 0;
@@ -398,62 +362,13 @@
             padding: 10px;
             cursor: pointer;
             z-index: 1002;
-            box-shadow: -2px 0 5px rgba(0,0,0,0.1);
+            box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
         }
+
         .right-panel-toggle:hover {
             background: #e0e0e0;
         }
-        .main-content {
-            width: 100%;
-            padding: 20px;
-            box-sizing: border-box;
-        }
-        .main-content {
-            width: 100%;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-            box-sizing: border-box;
-        }
-        .chart-container {
-            width: 100%;
-            background: white;
-            border-radius: 6px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            overflow: visible;  /* 确保内容不被裁剪 */
-        }
-        .echarts-container {
-            width: 100%;
-            height: 800px;
-            margin: 0 auto;
-        }
-        .control-panel {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin-bottom: 20px;
-            width: 100%;
-        }
-        .file-list {
-            width: 100%;
-            max-height: calc(100vh - 40px);
-            overflow-y: auto;
-            overflow-x: hidden;
-        }
-        #fileListContent {
-            width: 100%;
-        }
-        .file-list table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        .file-list td {
-            padding: 8px;
-            word-break: break-word;
-        }
-        /* 添加作者标识的样式 */
+
         .author-info {
             position: fixed;
             top: 10px;
@@ -461,12 +376,13 @@
             background: rgba(255, 255, 255, 0.9);
             padding: 5px 10px;
             border-radius: 4px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
             z-index: 1000;
             display: flex;
             align-items: center;
             gap: 10px;
         }
+
         .author-info a {
             color: #333;
             text-decoration: none;
@@ -474,10 +390,81 @@
             align-items: center;
             gap: 5px;
         }
+
         .author-info img {
             width: 20px;
             height: 20px;
             vertical-align: middle;
+        }
+
+        /* 悬浮上传条样式 */
+        .upload-btn-container {
+            position: fixed;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            padding: 8px 16px;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 0 0 6px 6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .upload-btn-container:hover {
+            background: #e9ecef;
+        }
+
+        .upload-btn-container label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            color: #495057;
+            font-size: 14px;
+        }
+
+        .upload-btn-container img {
+            width: 16px;
+            height: 16px;
+            vertical-align: middle;
+        }
+
+        /* 文件上传提示样式 */
+        .upload-tooltip {
+            visibility: hidden;
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 8px 12px;
+            background-color: #333;
+            color: white;
+            border-radius: 4px;
+            font-size: 12px;
+            white-space: nowrap;
+            opacity: 0;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+            z-index: 1000;
+            margin-bottom: 8px;
+        }
+
+        .upload-tooltip::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 5px;
+            border-style: solid;
+            border-color: #333 transparent transparent transparent;
+        }
+
+        .upload-container:hover .upload-tooltip {
+            visibility: visible;
+            opacity: 1;
         }
     </style>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -486,14 +473,22 @@
     <script src="js/main.js"></script>
     <script src="js/demoDataConverter.js"></script>
     <script>
-        window.onerror = function(msg, url, line, col, error) {
+        window.onerror = function (msg, url, line, col, error) {
             console.error('Error: ' + msg + '\nurl: ' + url + '\nline: ' + line);
             return false;
         };
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
 </head>
+
 <body>
+    <div class="upload-btn-container">
+        <label for="fileInput">
+            <img src="img/upload.png" alt="上传">
+            上传文件
+        </label>
+        <input type="file" id="fileInput" accept=".xhr,.dem" style="display: none;" onchange="handleFileUpload(event)">
+    </div>
     <div class="author-info">
         <span>DemoGraphViewer by Lws</span>
         <a href="https://github.com/Nunite/DemoAnalyzer" target="_blank">
@@ -505,21 +500,24 @@
         <!-- 左侧文件面板 -->
         <div class="sidebar">
             <div class="file-list" id="fileList">
-                <h3 style="margin-top: 0;">已加载文件</h3>
-                <div id="fileListContent"></div>
+                <div class="file-list-header">
+                    <h3>已加载文件</h3>
+                </div>
+                <div id="fileTableContainer"></div>
             </div>
         </div>
         <button class="sidebar-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">☰</button>
 
         <!-- 主要内容区域 -->
         <div class="main-content">
-            <div class="control-panel">
+            <!-- <div class="control-panel">
                 <label class="upload-button">
-                    <input type="file" accept=".xhr,.dem" multiple style="display: none" onchange="handleFileUpload(event)">
+                    <input type="file" accept=".xhr,.dem" multiple style="display: none"
+                        onchange="handleFileUpload(event)">
                     上传数据文件
                 </label>
-            </div>
-            <p class="info-text">仅支持.xhr和.dem文件格式 (20MB maximum)</p>
+            </div> -->
+            <!-- <p class="info-text">仅支持.xhr和.dem文件格式 (20MB maximum)</p> -->
             <div class="chart-container">
                 <h3 id="currentFileName" style="text-align: center; margin-bottom: 20px; color: #333;"></h3>
                 <div id="chartContainer" class="echarts-container"></div>
@@ -559,7 +557,8 @@
             <div class="command-options">
                 <!-- 颜色选择器 -->
                 <div class="command-option">
-                    <input type="color" class="color-picker" id="yaw-speed-color" value="#1E90FF" style="display: none;">
+                    <input type="color" class="color-picker" id="yaw-speed-color" value="#1E90FF"
+                        style="display: none;">
                     <span class="color-indicator" style="background: #1E90FF"></span>
                     <label>Yaw Speed</label>
                 </div>
@@ -574,12 +573,14 @@
                     <label>moveleft</label>
                 </div>
                 <div class="command-option">
-                    <input type="color" class="color-picker" id="moveright-color" value="#9370DB" style="display: none;">
+                    <input type="color" class="color-picker" id="moveright-color" value="#9370DB"
+                        style="display: none;">
                     <span class="color-indicator" style="background: #9370DB"></span>
                     <label>moveright</label>
                 </div>
                 <div class="command-option">
-                    <input type="color" class="color-picker" id="moveforward-color" value="#FFD700" style="display: none;">
+                    <input type="color" class="color-picker" id="moveforward-color" value="#FFD700"
+                        style="display: none;">
                     <span class="color-indicator" style="background: #FFD700"></span>
                     <label>moveforward</label>
                 </div>
@@ -594,7 +595,8 @@
                     <label>jump</label>
                 </div>
                 <div class="command-option">
-                    <input type="color" class="color-picker" id="valid-jump-color" value="#00FF00" style="display: none;">
+                    <input type="color" class="color-picker" id="valid-jump-color" value="#00FF00"
+                        style="display: none;">
                     <span class="color-indicator" style="background: #00FF00"></span>
                     <label>有效起跳帧</label>
                 </div>
@@ -609,7 +611,8 @@
                     <label>duck</label>
                 </div>
                 <div class="command-option">
-                    <input type="color" class="color-picker" id="duck-start-color" value="#A0522D" style="display: none;">
+                    <input type="color" class="color-picker" id="duck-start-color" value="#A0522D"
+                        style="display: none;">
                     <span class="color-indicator" style="background: #A0522D"></span>
                     <label>duck起始帧</label>
                 </div>
@@ -630,7 +633,8 @@
                 </div>
             </div>
         </div>
-        <button class="right-panel-toggle" onclick="document.querySelector('.right-panel').classList.toggle('open')">☰</button>
+        <button class="right-panel-toggle"
+            onclick="document.querySelector('.right-panel').classList.toggle('open')">☰</button>
     </div>
 
     <script>
@@ -658,13 +662,13 @@
 
             for (let i = 0; i < jumpFrames.length; i++) {
                 const jumpFrame = jumpFrames[i];
-                
+
                 // 检查跳跃前是否在地面上
                 const isOnGround = groundFrames.some(gf => gf === jumpFrame - 1);
-                
+
                 if (isOnGround) {
                     stats.totalJumps++;
-                    
+
                     // 检查是否是TBJ (距离上次跳跃只有1-2个tick)
                     if (lastJumpFrame !== -1 && jumpFrame - lastJumpFrame <= 2) {
                         stats.successfulTBJ++;
@@ -673,14 +677,14 @@
                     } else {
                         currentConsecutiveJumps = 1;
                     }
-                    
+
                     lastJumpFrame = jumpFrame;
                 }
             }
 
             // 计算成功率
-            stats.tbjSuccessRate = stats.totalJumps > 0 ? 
-                ((stats.successfulTBJ / stats.totalJumps) * 100).toFixed(1) + '%' : 
+            stats.tbjSuccessRate = stats.totalJumps > 0 ?
+                ((stats.successfulTBJ / stats.totalJumps) * 100).toFixed(1) + '%' :
                 '0%';
 
             return stats;
@@ -690,49 +694,49 @@
             console.log('文件上传开始');
             const files = event.target.files;
             console.log('文件数量:', files.length);
-            
+
             for (let i = 0; i < files.length; i++) {
                 const file = files[i];
                 console.log('处理文件:', file.name);
-                
+
                 const reader = new FileReader();
-                
-                reader.onload = function(e) {
+
+                reader.onload = function (e) {
                     console.log('文件已加载:', file.name);
                     const demoReader = new HLDemo.DemoReader();
-                    
-                    demoReader.onready = function() {
+
+                    demoReader.onready = function () {
                         console.log('Demo解析成功');
                         try {
                             const frames = demoReader.directoryEntries[1].frames;
                             console.log('帧数:', frames.length);
-                            
+
                             // 使用main.js中的parseFrames处理数据
                             const parsedData = parseFrames(frames);
                             console.log('解析后的数据:', parsedData);
-                            
+
                             // 使用解析后的数据分析TBJ
                             const tbjStats = analyzeTBJFromParsedData(parsedData);
                             console.log('TBJ统计:', tbjStats);
-                            
+
                             // 更新TBJ统计信息显示
                             document.getElementById('totalJumps').textContent = tbjStats.totalJumps;
                             document.getElementById('successfulTBJ').textContent = tbjStats.successfulTBJ;
                             document.getElementById('tbjSuccessRate').textContent = tbjStats.tbjSuccessRate;
                             document.getElementById('maxConsecutiveJumps').textContent = tbjStats.maxConsecutiveJumps;
-                            
+
                             // 初始化图表
                             const chartData = convertDemoData(parsedData);
                             initChart(chartData);
-                            
+
                             // 显示文件名
                             document.getElementById('currentFileName').textContent = '当前文件：' + file.name;
                         } catch (error) {
                             console.error('处理Demo时出错:', error);
                         }
                     };
-                    
-                    demoReader.onerror = function(error) {
+
+                    demoReader.onerror = function (error) {
                         console.error('Demo读取错误:', error);
                     };
 
@@ -745,22 +749,22 @@
                         console.error('创建demo文件时出错:', error);
                     }
                 };
-                
-                reader.onerror = function(error) {
+
+                reader.onerror = function (error) {
                     console.error('文件读取错误:', error);
                 };
-                
+
                 reader.readAsArrayBuffer(file);
             }
         }
 
         function initChart(demoData) {
             chart = echarts.init(document.getElementById('chartContainer'));
-            
+
             // 处理数据
             const frames = demoData.data.map(d => d.frame);
             const yawSpeeds = demoData.data.map(d => d.yawSpeed);
-            
+
             const option = {
                 title: [
                     { top: 205, left: 5, text: "Yaw Speed", textStyle: { fontSize: 12 } },
@@ -777,14 +781,14 @@
                 ],
                 tooltip: {
                     trigger: 'axis',
-                    formatter: function(params) {
+                    formatter: function (params) {
                         // 找到当前帧的索引
                         const frameIndex = params[0].dataIndex;
                         const frame = frames[frameIndex];
-                        
+
                         // 构建显示信息
                         let result = `Frame: ${frame}<br/>`;
-                        
+
                         // 获取所有数据系列的值
                         const seriesValues = {
                             'Yaw Speed': yawSpeeds[frameIndex],
@@ -939,8 +943,8 @@
                         data: demoData.data.map(d => ({
                             value: d.jump ? 1 : 0,
                             itemStyle: {
-                                color: d.validJump ? document.getElementById('valid-jump-color').value : 
-                                                   document.getElementById('jump-color').value
+                                color: d.validJump ? document.getElementById('valid-jump-color').value :
+                                    document.getElementById('jump-color').value
                             }
                         })),
                         animation: false,
@@ -965,28 +969,28 @@
                         yAxisIndex: 8,
                         data: demoData.data.map((d, index, array) => {
                             if (!d.duck) return 0;
-                            
+
                             // 检查当前帧是否是一段连续duck的起始或结束
                             let isStart = false;
                             let isEnd = false;
-                            
+
                             // 判断是否是起始帧：当前帧是duck且前一帧不是duck
                             if (index === 0 || !array[index - 1].duck) {
                                 isStart = true;
                             }
-                            
+
                             // 判断是否是结束帧：当前帧是duck且后一帧不是duck
                             if (index === array.length - 1 || !array[index + 1].duck) {
                                 isEnd = true;
                             }
-                            
+
                             // 根据帧的位置返回不同的样式
                             return {
                                 value: 1,
                                 itemStyle: {
                                     color: isStart ? document.getElementById('duck-start-color').value :
-                                           isEnd ? document.getElementById('duck-end-color').value :
-                                           document.getElementById('duck-color').value
+                                        isEnd ? document.getElementById('duck-end-color').value :
+                                            document.getElementById('duck-color').value
                                 }
                             };
                         }),
@@ -1019,7 +1023,7 @@
                     }
                 ]
             };
-            
+
             chart.setOption(option);
         }
 
@@ -1047,9 +1051,9 @@
             chart && chart.resize();
         });
 
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             const colorPickers = document.querySelectorAll('.color-picker');
-            
+
             // 加载保存的颜色
             colorPickers.forEach(picker => {
                 const savedColor = localStorage.getItem(picker.id);
@@ -1060,7 +1064,7 @@
                     updateChartColor(seriesName, savedColor);
                 }
 
-                picker.addEventListener('input', function() {
+                picker.addEventListener('input', function () {
                     const selectedColor = this.value;
                     this.nextElementSibling.style.background = selectedColor;
                     localStorage.setItem(this.id, selectedColor);
@@ -1103,16 +1107,16 @@
         function openDatabase() {
             return new Promise((resolve, reject) => {
                 const request = indexedDB.open('fileStore', 1);
-                
+
                 request.onupgradeneeded = (e) => {
                     const db = e.target.result;
                     db.createObjectStore('files', { keyPath: 'id' });
                 };
-                
+
                 request.onsuccess = (e) => {
                     resolve(e.target.result);
                 };
-                
+
                 request.onerror = (e) => {
                     reject(e.target.error);
                 };
@@ -1125,11 +1129,11 @@
                     const transaction = db.transaction(['files'], 'readonly');
                     const store = transaction.objectStore('files');
                     const request = store.getAll();
-                    
+
                     request.onsuccess = () => {
                         resolve(request.result);
                     };
-                    
+
                     request.onerror = () => {
                         reject(request.error);
                     };
@@ -1139,7 +1143,7 @@
 
         function processFileFromDatabase(file_id, index = 0) {
             retrieveFile(file_id)
-                .then(({file}) => {
+                .then(({ file }) => {
                     // 更新文件名标题
                     document.getElementById('currentFileName').textContent = '当前文件：' + file.name;
                     processFile(file, index);
@@ -1192,7 +1196,7 @@
             const now = new Date();
             const diff = now - date;
             const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-            
+
             if (days === 0) {
                 const hours = Math.floor(diff / (1000 * 60 * 60));
                 if (hours === 0) {
@@ -1213,17 +1217,17 @@
 
         function generateFileTable(containerClass) {
             retrieveAllFiles()
-            .then((files) => {
-                files.reverse();
-                let html = '<h3>已加载文件</h3>';
-                html += '<table>';
-                html += '<tbody>';
+                .then((files) => {
+                    files.reverse();
+                    let html = '<h3>已加载文件</h3>';
+                    html += '<table>';
+                    html += '<tbody>';
 
-                files.forEach(file => {
-                    const data = file.file;
-                    const timeStr = formatDate(data.lastModified);
-                    
-                    html += `
+                    files.forEach(file => {
+                        const data = file.file;
+                        const timeStr = formatDate(data.lastModified);
+
+                        html += `
                         <tr>
                             <td>
                                 <div class="file-info">
@@ -1237,14 +1241,14 @@
                                 </div>
                             </td>
                         </tr>`;
-                });
+                    });
 
-                html += '</tbody></table>';
-                document.querySelector(containerClass).innerHTML = html;
-            })
-            .catch((error) => {
-                console.error('Error retrieving files:', error);
-            });
+                    html += '</tbody></table>';
+                    document.querySelector(containerClass).innerHTML = html;
+                })
+                .catch((error) => {
+                    console.error('Error retrieving files:', error);
+                });
         }
 
         function deleteFile(fileId) {
@@ -1253,12 +1257,12 @@
                     const transaction = db.transaction(['files'], 'readwrite');
                     const store = transaction.objectStore('files');
                     const request = store.delete(fileId);
-                    
+
                     request.onsuccess = () => {
                         generateFileTable('#fileList');
                         resolve('File deleted successfully');
                     };
-                    
+
                     request.onerror = () => {
                         reject(request.error);
                     };
@@ -1276,11 +1280,11 @@
                         file: file
                     };
                     const request = store.put(fileData);
-                    
+
                     request.onsuccess = () => {
                         resolve('File stored successfully');
                     };
-                    
+
                     request.onerror = () => {
                         reject(request.error);
                     };
@@ -1291,15 +1295,15 @@
         function processFile(file, index = 0) {
             storeFile(file).then(() => {
                 const demoReader = new HLDemo.DemoReader();
-                demoReader.onready(function() {
+                demoReader.onready(function () {
                     const frames = demoReader.directoryEntries[1].frames;
                     const parsedData = parseFrames(frames);
-                    
+
                     // 初始化图表
                     const chartData = convertDemoData(parsedData);
                     chartData.fileName = file.name;
                     initChart(chartData);
-                    
+
                     // 更新TBJ统计信息
                     const tbjStats = analyzeTBJ(frames);
                     document.getElementById('totalJumps').textContent = tbjStats.totalJumps;
@@ -1307,7 +1311,7 @@
                     document.getElementById('tbjSuccessRate').textContent = tbjStats.tbjSuccessRate;
                     document.getElementById('maxConsecutiveJumps').textContent = tbjStats.maxConsecutiveJumps;
                 });
-                
+
                 demoReader.parse(file);
             }).catch((error) => {
                 console.error('Error storing file:', error);
@@ -1326,22 +1330,22 @@
         }
     </script>
     <script>
-        $(document).ready(function() {
+        $(document).ready(function () {
             // 为所有颜色指示器添加点击事件
-            $('.color-indicator').on('click', function() {
+            $('.color-indicator').on('click', function () {
                 // 找到对应的颜色选择器并触发点击
                 $(this).siblings('.color-picker').click();
             });
 
             // 当颜色选择器值改变时更新指示器颜色
-            $('.color-picker').on('input', function() {
+            $('.color-picker').on('input', function () {
                 // 更新对应的颜色指示器
                 $(this).siblings('.color-indicator').css('background', $(this).val());
-                
+
                 // 获取当前选择器的ID和颜色值
                 const colorId = $(this).attr('id');
                 const colorValue = $(this).val();
-                
+
                 // 更新图表颜色
                 updateChartColor(colorId, colorValue);
             });
@@ -1349,10 +1353,10 @@
             function updateChartColor(colorId, colorValue) {
                 // 根据ID获取对应的数据系列名称
                 const seriesName = colorId.replace('-color', '');
-                
+
                 // 获取当前的图表选项
                 const option = myChart.getOption();
-                
+
                 // 遍历所有数据系列
                 option.series.forEach((series, index) => {
                     if (series.name === seriesName) {
@@ -1362,11 +1366,12 @@
                         };
                     }
                 });
-                
+
                 // 应用更新后的选项
                 myChart.setOption(option);
             }
         });
     </script>
 </body>
+
 </html>
