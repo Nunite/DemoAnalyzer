@@ -484,6 +484,21 @@
             text-align: center;
             font-style: italic;
         }
+
+        .file-info {
+            margin: 10px 0;
+            padding: 8px 12px;
+            background-color: #f8f8f8;
+            border-radius: 4px;
+            font-size: 14px;
+            color: #333;
+            display: none;  /* 默认隐藏 */
+        }
+        
+        .file-info .filename {
+            font-weight: 500;
+            color: #2196F3;
+        }
     </style>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="js/hldemo.min.js"></script>
@@ -505,7 +520,7 @@
             <img src="img/upload.png" alt="上传">
             上传文件
         </label>
-        <input type="file" id="fileInput" accept=".xhr,.dem" style="display: none;" onchange="handleFileUpload(event)">
+        <input type="file" id="fileInput" accept=".dem" style="display: none;" onchange="handleFileUpload(event)">
     </div>
     <div class="author-info">
         <span>DemoGraphViewer by Lws</span>
@@ -660,6 +675,15 @@
         </div>
         <button class="right-panel-toggle"
             onclick="document.querySelector('.right-panel').classList.toggle('open')">☰</button>
+         <!-- <div class="tool-option">
+            <label>选择Demo文件</label>
+            <div class="option-content">
+                <input type="file" id="demoFile" accept=".dem">
+                 <div class="file-info">
+                    当前文件：<span class="filename">未选择文件</span>
+                </div> 
+            </div>
+        </div>  -->
     </div>
 
     <script>
@@ -696,7 +720,7 @@
                             initChart(chartData);
 
                             // 显示文件名
-                            document.getElementById('currentFileName').textContent = '当前文件：' + file.name;
+                            //document.getElementById('currentFileName').textContent = '当前文件：' + file.name;
                         } catch (error) {
                             console.error('处理Demo时出错:', error);
                         }
@@ -725,44 +749,39 @@
         }
 
         function initChart(demoData) {
+            if (chart) {
+                chart.dispose();
+            }
             chart = echarts.init(document.getElementById('chartContainer'));
 
-            // 处理数据
-            const frames = demoData.data.map(d => d.frame);
-            const yawSpeeds = demoData.data.map(d => d.yawSpeed);
-
             const option = {
-                title: [
-                    { top: 205, left: 5, text: "Yaw Speed", textStyle: { fontSize: 12 } },
-                    { top: 345, left: 5, text: "use", textStyle: { fontSize: 12 } },
-                    { top: 375, left: 5, text: "moveleft", textStyle: { fontSize: 12 } },
-                    { top: 405, left: 5, text: "moveright", textStyle: { fontSize: 12 } },
-                    { top: 435, left: 5, text: "moveforward", textStyle: { fontSize: 12 } },
-                    { top: 465, left: 5, text: "moveback", textStyle: { fontSize: 12 } },
-                    { top: 495, left: 5, text: "jump", textStyle: { fontSize: 12 } },
-                    { top: 525, left: 5, text: "ground", textStyle: { fontSize: 12 } },
-                    { top: 555, left: 5, text: "duck", textStyle: { fontSize: 12 } },
-                    { top: 585, left: 5, text: "forward", textStyle: { fontSize: 12 } },
-                    { top: 615, left: 5, text: "back", textStyle: { fontSize: 12 } }
-                ],
+                title: {
+                    text: '当前文件 - ' + (demoData.fileName || '未选择文件'),
+                    left: 'center',
+                    top: 10,
+                    textStyle: {
+                        fontSize: 16,
+                        color: '#333'
+                    }
+                },
                 tooltip: {
                     trigger: 'axis',
                     formatter: function (params) {
                         // 找到当前帧的索引
                         const frameIndex = params[0].dataIndex;
-                        const frame = frames[frameIndex];
+                        const frame = demoData.data[frameIndex].frame;
 
                         // 构建显示信息
                         let result = `Frame: ${frame}<br/>`;
 
                         // 获取所有数据系列的值
                         const seriesValues = {
-                            'Yaw Speed': yawSpeeds[frameIndex],
+                            'Yaw Speed': demoData.data[frameIndex].yawSpeed,
                             'use': demoData.data[frameIndex].use ? 'Yes' : 'No',
-                            'moveleft': demoData.data[frameIndex].moveleft ? 'Yes' : 'No',
-                            'moveright': demoData.data[frameIndex].moveright ? 'Yes' : 'No',
-                            'moveforward': demoData.data[frameIndex].moveforward ? 'Yes' : 'No',
-                            'moveback': demoData.data[frameIndex].moveback ? 'Yes' : 'No',
+                            'moveleft': demoData.data[frameIndex].moveLeft ? 'Yes' : 'No',
+                            'moveright': demoData.data[frameIndex].moveRight ? 'Yes' : 'No',
+                            'moveforward': demoData.data[frameIndex].moveForward ? 'Yes' : 'No',
+                            'moveback': demoData.data[frameIndex].moveBack ? 'Yes' : 'No',
                             'jump': demoData.data[frameIndex].jump ? 'Yes' : 'No',
                             'ground': demoData.data[frameIndex].ground ? 'Yes' : 'No',
                             'duck': demoData.data[frameIndex].duck ? 'Yes' : 'No',
@@ -819,7 +838,7 @@
                 ],
                 xAxis: Array.from({ length: 11 }, (_, i) => ({
                     type: 'category',
-                    data: frames,
+                    data: demoData.data.map(d => d.frame),
                     gridIndex: i,
                     show: i === 10
                 })),
@@ -834,7 +853,7 @@
                     {
                         name: 'Yaw Speed',
                         type: 'line',
-                        data: yawSpeeds,
+                        data: demoData.data.map(d => d.yawSpeed),
                         animation: false,
                         show: true,
                         itemStyle: {
@@ -1111,7 +1130,7 @@
             retrieveFile(file_id)
                 .then(({ file }) => {
                     // 更新文件名标题
-                    document.getElementById('currentFileName').textContent = '当前文件：' + file.name;
+                    //document.getElementById('currentFileName').textContent = '当前文件：' + file.name;
                     processFile(file, index);
                 })
                 .catch((error) => {
@@ -1266,7 +1285,7 @@
                     const parsedData = parseFrames(frames);
 
                     // 初始化图表
-                    const chartData = convertDemoData(parsedData);
+                    const chartData = convertDemoData(parsedData, file.name);
                     chartData.fileName = file.name;
                     initChart(chartData);
 
@@ -1310,6 +1329,57 @@
                 generateFileTable('#fileList');
             }
         }
+    </script>
+    <script>
+        document.getElementById('demoFile').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                // 显示文件名
+                document.querySelector('.file-info').style.display = 'block';
+                document.querySelector('.filename').textContent = file.name;
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const demoReader = new DemoReader();
+                    demoReader.onready = function () {
+                        const frames = demoReader.directoryEntries[1].frames;
+                        const parsedData = parseFrames(frames);
+
+                        // 初始化图表
+                        const chartData = convertDemoData(parsedData, file.name);
+                        chartData.fileName = file.name;
+                        initChart(chartData);
+
+                        // 更新TBJ统计信息
+                        const tbjStats = analyzeTBJFromParsedData(parsedData);
+                        document.getElementById('totalJumps').textContent = tbjStats.totalJumps;
+                        document.getElementById('successfulTBJ').textContent = tbjStats.successfulTBJ;
+                        document.getElementById('tbjSuccessRate').textContent = tbjStats.tbjSuccessRate;
+                        document.getElementById('maxConsecutiveTBJ').textContent = tbjStats.maxConsecutiveTBJ;
+                        
+                        // 显示连续TBJ的详细信息
+                        const detailsElement = document.getElementById('consecutiveTBJDetails');
+                        if (tbjStats.consecutiveTBJData && tbjStats.consecutiveTBJData.length > 0) {
+                            const details = tbjStats.consecutiveTBJData
+                                .filter(data => data.count > 1)  // 只显示连续次数大于1的
+                                .sort((a, b) => b.count - a.count)  // 按连续次数从大到小排序
+                                .map(data => {
+                                    const frames = `帧 ${data.startFrame}-${data.endFrame}`;
+                                    return `<div class="consecutive-item">${frames}: ${data.count} 次</div>`;
+                                })
+                                .join('');
+                            detailsElement.innerHTML = details || '<div class="consecutive-item">无连续TBJ</div>';
+                        } else {
+                            detailsElement.innerHTML = '<div class="consecutive-item">无连续TBJ</div>';
+                        }
+                    };
+
+                    demoReader.parse(file);
+                };
+
+                reader.readAsArrayBuffer(file);
+            }
+        });
     </script>
     <script>
         $(document).ready(function () {

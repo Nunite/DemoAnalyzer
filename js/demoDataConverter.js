@@ -10,7 +10,7 @@ function getAngleDifference(angle1, angle2) {
     return diff;
 }
 
-function convertDemoData(inputData) {
+function convertDemoData(inputData, fileName = "") {
     // 获取所有帧的集合
     const allFrames = new Set();
 
@@ -29,7 +29,7 @@ function convertDemoData(inputData) {
 
     // 创建输出数据结构
     const outputData = {
-        fileName: "", // 可以从外部设置
+        fileName: fileName, // 使用传入的文件名
         data: []
     };
 
