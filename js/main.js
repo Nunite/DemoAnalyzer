@@ -886,6 +886,55 @@ function parseMessage(data) {
     }
 }
 
+function parseDemo(file, index, is_archive=false) {
+    const demoReader = new HLDemo.DemoReader();
+    demoReader.onready(async function() {
+        const frames = demoReader.directoryEntries[1].frames;
+        
+        //console.log(demoReader);
+        
+        const jumps_data = parseFrames(frames);
+        jumps_data.demo_size = demoReader.demoSize;
+        jumps_data.map = demoReader.header.mapName;
+        jumps_data.filename = file.name;
+        
+        const jumps = parseJumpData(jumps_data);
+        const jump_stats = getJumpStats(jumps);
+        
+        /*
+        console.log(jumps_data);
+        console.log(jump_stats);
+        */
+        
+        const analyzer_style = $('input[name="analyzer-setting"]:checked').attr('id');
+        const generate_graphs = $('#generate_graphs').is(':checked');
+
+        generateDemoTable(jump_stats, jumps_data, index, analyzer_style, generate_graphs);
+
+        try {
+            const retrieve = await retrieveFile(file.name);
+            if (retrieve && !retrieve.metadata.uploaded) { 
+                const meta = {
+                    demo_meta: jumps_data.user_info,
+                    uploaded: + new Date()
+                };
+
+                updateDemoMetadata(file.name, meta)
+                    .then((message) => {
+                        console.log(message);
+                    })
+                    .catch((error) => {
+                        console.error(error);
+                    });
+            }
+        } catch (error) {
+            console.error('Error retrieving file from database:', error);
+        }
+    });
+    
+    demoReader.parse(file);
+}
+
 function parseFrames(frames) {
     // declare bunch of helper stuff
     const jumps_data = {};
@@ -1566,7 +1615,11 @@ function handleFileUpload(event) {
                 const demoData = convertDemoData(demoReader);
                 
                 // 分析TBJ数据
-                const tbjStats = analyzeTBJ(demoReader.directoryEntries[0].frames);
+                const parsedData = {
+                    jump_command_frames: demoReader.directoryEntries[0].frames.jump_command_frames,
+                    ground_frames: demoReader.directoryEntries[0].frames.ground_frames
+                };
+                const tbjStats = window.analyzeTBJFromParsedData(parsedData);
                 
                 // 更新TBJ统计信息显示
                 document.getElementById('totalJumps').textContent = tbjStats.totalJumps;

@@ -64,44 +64,80 @@ function convertDemoData(inputData) {
 }
 
 // 添加TBJ分析功能
-function analyzeTBJ(frames) {
+function analyzeTBJFromParsedData(parsedData) {
     let stats = {
         totalJumps: 0,
         successfulTBJ: 0,
-        consecutiveJumps: 0,
-        maxConsecutiveJumps: 0,
-        tbjSuccessRate: 0
+        tbjSuccessRate: 0,
+        maxConsecutiveTBJ: 0,
+        consecutiveTBJData: [], // 存储每次连续TBJ的信息：[{startFrame, endFrame, count}]
+        currentConsecutive: 0
     };
 
-    const parsedData = parseFrames(frames);
+    // 计算总跳跃数：所有标记为'start'的帧
+    const allFrames = Object.keys(parsedData.data);
+    stats.totalJumps = allFrames.filter(frame => parsedData.data[frame] === 'start').length;
+
     const jumpFrames = parsedData.jump_command_frames;
-    const groundFrames = parsedData.ground_frames;
 
-    let currentConsecutiveJumps = 0;
-    let lastJumpFrame = -1;
+    // 确保数组已排序
+    jumpFrames.sort((a, b) => a - b);
 
-    // 按顺序遍历所有跳跃帧
-    jumpFrames.sort((a, b) => a - b).forEach(jumpFrame => {
-        // 检查是否在地面上（在跳跃前一帧是否在地面）
-        if (groundFrames.includes(jumpFrame - 1)) {
-            stats.totalJumps++;
+    let consecutiveStart = null; // 记录当前连续TBJ的开始帧
+
+    // 遍历每个有效跳跃帧
+    allFrames.forEach(frame => {
+        if (parsedData.data[frame] === 'start') {
+            const frameNum = parseInt(frame);
             
-            // 检查是否是TBJ (距离上次跳跃只有1-2个tick)
-            if (lastJumpFrame !== -1 && jumpFrame - lastJumpFrame <= 2) {
+            // 检查前10帧内是否有其他起跳帧
+            const hasJumpBefore = jumpFrames.some(jf => 
+                jf < frameNum && jf >= frameNum - 10
+            );
+
+            // 如果前10帧内没有其他起跳帧，则这是一个TBJ
+            if (!hasJumpBefore) {
                 stats.successfulTBJ++;
-                currentConsecutiveJumps++;
-                stats.maxConsecutiveJumps = Math.max(stats.maxConsecutiveJumps, currentConsecutiveJumps);
+                
+                // 处理连续TBJ的统计
+                if (consecutiveStart === null) {
+                    consecutiveStart = frameNum;
+                    stats.currentConsecutive = 1;
+                } else {
+                    stats.currentConsecutive++;
+                }
+                
+                // 更新最大连续次数
+                if (stats.currentConsecutive > stats.maxConsecutiveTBJ) {
+                    stats.maxConsecutiveTBJ = stats.currentConsecutive;
+                }
             } else {
-                currentConsecutiveJumps = 1;
+                // 如果这不是TBJ，且之前有连续TBJ，则记录这段连续TBJ的信息
+                if (stats.currentConsecutive > 0) {
+                    stats.consecutiveTBJData.push({
+                        startFrame: consecutiveStart,
+                        endFrame: frameNum - 1,
+                        count: stats.currentConsecutive
+                    });
+                }
+                consecutiveStart = null;
+                stats.currentConsecutive = 0;
             }
-            
-            lastJumpFrame = jumpFrame;
         }
     });
 
+    // 处理最后一段连续TBJ（如果有的话）
+    if (stats.currentConsecutive > 0) {
+        stats.consecutiveTBJData.push({
+            startFrame: consecutiveStart,
+            endFrame: parseInt(allFrames[allFrames.length - 1]),
+            count: stats.currentConsecutive
+        });
+    }
+
     // 计算成功率
-    stats.tbjSuccessRate = stats.totalJumps > 0 ? 
-        ((stats.successfulTBJ / stats.totalJumps) * 100).toFixed(1) + '%' : 
+    stats.tbjSuccessRate = stats.totalJumps > 0 ?
+        ((stats.successfulTBJ / stats.totalJumps) * 100).toFixed(1) + '%' :
         '0%';
 
     return stats;
@@ -109,5 +145,5 @@ function analyzeTBJ(frames) {
 
 // 导出函数
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { convertDemoData, analyzeTBJ };
+    module.exports = { convertDemoData, analyzeTBJFromParsedData };
 }

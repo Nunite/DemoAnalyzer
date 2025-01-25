@@ -240,58 +240,65 @@
         }
 
         .tbj-panel {
-            background: #f5f5f5;
-            border-radius: 6px;
-            padding: 10px;
-            margin-top: 20px;
-            display: none;
+            background: #fff;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-
+        
         .tbj-panel h4 {
-            margin-top: 0;
-            margin-bottom: 15px;
+            margin: 0 0 15px 0;
+            color: #333;
+            font-size: 16px;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 8px;
         }
 
-        #tbjStats {
-            display: none;
-        }
-
-        .form-check-input {
-            margin-right: 5px;
-        }
-
-        .analyze-demo {
-            cursor: pointer;
-        }
-
-        .tool-option {
-            margin: 10px 0;
-        }
-
-        .tool-option label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-        }
-
-        .option-content {
-            margin-left: 10px;
-        }
-
-        .color-option {
+        .stat-item {
+            margin-bottom: 12px;
             display: flex;
-            align-items: center;
-            margin: 5px 0;
+            align-items: baseline;
         }
 
-        .color-option input[type="color"] {
-            margin-right: 10px;
-            width: 30px;
-            height: 20px;
+        .stat-item label {
+            color: #666;
+            font-size: 14px;
+            min-width: 120px;
         }
 
-        .color-option label {
-            font-weight: normal;
+        .stat-item span {
+            color: #333;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .stat-item:last-child {
+            margin-bottom: 0;
+        }
+
+        #consecutiveTBJDetails {
+            margin-top: 8px !important;
+            color: #666;
+            line-height: 1.6;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding-left: 0;  /* 移除左边距 */
+        }
+
+        .consecutive-item {
+            background: #f5f5f5;
+            border-radius: 4px;
+            padding: 6px 12px;
+            font-size: 13px;
+            display: block;
+            width: fit-content;
+            margin-left: 0px;  /* 与其他标签对齐 */
+        }
+
+        .highlight-stat {
+            color: #2196F3;
+            font-weight: bold;
         }
 
         .sidebar {
@@ -530,26 +537,30 @@
             <div class="tool-option">
                 <label>
                     <input type="checkbox" id="showTBJ" onchange="toggleTBJDisplay()">
-                    TBJ显示设置
+                    TBJ显示
                 </label>
             </div>
             <div id="tbjStats" class="tbj-panel">
                 <h4>TBJ 统计</h4>
                 <div class="stat-item">
-                    <div class="label">总跳跃次数</div>
-                    <div class="value" id="totalJumps">-</div>
+                    <label>总跳跃数:</label>
+                    <span id="totalJumps">-</span>
                 </div>
                 <div class="stat-item">
-                    <div class="label">成功TBJ次数</div>
-                    <div class="value" id="successfulTBJ">-</div>
+                    <label>成功TBJ次数:</label>
+                    <span id="successfulTBJ">-</span>
                 </div>
                 <div class="stat-item">
-                    <div class="label">TBJ成功率</div>
-                    <div class="value" id="tbjSuccessRate">-</div>
+                    <label>TBJ成功率:</label>
+                    <span id="tbjSuccessRate" class="highlight-stat">-</span>
                 </div>
                 <div class="stat-item">
-                    <div class="label">最长连跳</div>
-                    <div class="value" id="maxConsecutiveJumps">-</div>
+                    <label>最大连续TBJ次数:</label>
+                    <span id="maxConsecutiveTBJ" class="highlight-stat">-</span>
+                </div>
+                <div class="stat-item">
+                    <label>连续TBJ详情:</label>
+                    <div id="consecutiveTBJDetails"></div>
                 </div>
             </div>
             <hr style="margin: 20px 0;">
@@ -565,71 +576,71 @@
                 <div class="command-option">
                     <input type="color" class="color-picker" id="use-color" value="#FF4500" style="display: none;">
                     <span class="color-indicator" style="background: #FF4500"></span>
-                    <label>use</label>
+                    <label>Use</label>
                 </div>
                 <div class="command-option">
                     <input type="color" class="color-picker" id="moveleft-color" value="#32CD32" style="display: none;">
                     <span class="color-indicator" style="background: #32CD32"></span>
-                    <label>moveleft</label>
+                    <label>Moveleft</label>
                 </div>
                 <div class="command-option">
                     <input type="color" class="color-picker" id="moveright-color" value="#9370DB"
                         style="display: none;">
                     <span class="color-indicator" style="background: #9370DB"></span>
-                    <label>moveright</label>
+                    <label>Moveright</label>
                 </div>
                 <div class="command-option">
                     <input type="color" class="color-picker" id="moveforward-color" value="#FFD700"
                         style="display: none;">
                     <span class="color-indicator" style="background: #FFD700"></span>
-                    <label>moveforward</label>
+                    <label>Moveforward</label>
                 </div>
                 <div class="command-option">
                     <input type="color" class="color-picker" id="moveback-color" value="#FF69B4" style="display: none;">
                     <span class="color-indicator" style="background: #FF69B4"></span>
-                    <label>moveback</label>
+                    <label>Moveback</label>
                 </div>
                 <div class="command-option">
                     <input type="color" class="color-picker" id="jump-color" value="#00CED1" style="display: none;">
                     <span class="color-indicator" style="background: #00CED1"></span>
-                    <label>jump</label>
+                    <label>Jump</label>
                 </div>
                 <div class="command-option">
                     <input type="color" class="color-picker" id="valid-jump-color" value="#00FF00"
                         style="display: none;">
                     <span class="color-indicator" style="background: #00FF00"></span>
-                    <label>有效起跳帧</label>
+                    <label>Valid jump</label>
                 </div>
                 <div class="command-option">
                     <input type="color" class="color-picker" id="ground-color" value="#808080" style="display: none;">
                     <span class="color-indicator" style="background: #808080"></span>
-                    <label>ground</label>
+                    <label>Ground</label>
                 </div>
                 <div class="command-option">
                     <input type="color" class="color-picker" id="duck-color" value="#8B4513" style="display: none;">
                     <span class="color-indicator" style="background: #8B4513"></span>
-                    <label>duck</label>
+                    <label>Duck</label>
                 </div>
                 <div class="command-option">
                     <input type="color" class="color-picker" id="duck-start-color" value="#A0522D"
                         style="display: none;">
                     <span class="color-indicator" style="background: #A0522D"></span>
-                    <label>duck起始帧</label>
+                    <label>First duck</label>
                 </div>
                 <div class="command-option">
                     <input type="color" class="color-picker" id="duck-end-color" value="#8B4513" style="display: none;">
                     <span class="color-indicator" style="background: #8B4513"></span>
-                    <label>duck结束帧</label>
+                    <label>Last duck</label>
                 </div>
                 <div class="command-option">
                     <input type="color" class="color-picker" id="forward-color" value="#4682B4" style="display: none;">
                     <span class="color-indicator" style="background: #4682B4"></span>
-                    <label>forward</label>
+                    <label>Forward</label>
                 </div>
                 <div class="command-option">
                     <input type="color" class="color-picker" id="back-color" value="#CD853F" style="display: none;">
                     <span class="color-indicator" style="background: #CD853F"></span>
-                    <label>back</label>
+                    <label>Back</label>
                 </div>
             </div>
         </div>
@@ -640,55 +651,6 @@
     <script>
         let chart = null;
         let loadedFiles = []; // 存储已加载的文件
-
-        function analyzeTBJFromParsedData(parsedData) {
-            let stats = {
-                totalJumps: 0,
-                successfulTBJ: 0,
-                consecutiveJumps: 0,
-                maxConsecutiveJumps: 0,
-                tbjSuccessRate: 0
-            };
-
-            const jumpFrames = parsedData.jump_command_frames;
-            const groundFrames = parsedData.ground_frames;
-
-            // 确保数组已排序
-            jumpFrames.sort((a, b) => a - b);
-            groundFrames.sort((a, b) => a - b);
-
-            let currentConsecutiveJumps = 0;
-            let lastJumpFrame = -1;
-
-            for (let i = 0; i < jumpFrames.length; i++) {
-                const jumpFrame = jumpFrames[i];
-
-                // 检查跳跃前是否在地面上
-                const isOnGround = groundFrames.some(gf => gf === jumpFrame - 1);
-
-                if (isOnGround) {
-                    stats.totalJumps++;
-
-                    // 检查是否是TBJ (距离上次跳跃只有1-2个tick)
-                    if (lastJumpFrame !== -1 && jumpFrame - lastJumpFrame <= 2) {
-                        stats.successfulTBJ++;
-                        currentConsecutiveJumps++;
-                        stats.maxConsecutiveJumps = Math.max(stats.maxConsecutiveJumps, currentConsecutiveJumps);
-                    } else {
-                        currentConsecutiveJumps = 1;
-                    }
-
-                    lastJumpFrame = jumpFrame;
-                }
-            }
-
-            // 计算成功率
-            stats.tbjSuccessRate = stats.totalJumps > 0 ?
-                ((stats.successfulTBJ / stats.totalJumps) * 100).toFixed(1) + '%' :
-                '0%';
-
-            return stats;
-        }
 
         function handleFileUpload(event) {
             console.log('文件上传开始');
@@ -714,16 +676,6 @@
                             // 使用main.js中的parseFrames处理数据
                             const parsedData = parseFrames(frames);
                             console.log('解析后的数据:', parsedData);
-
-                            // 使用解析后的数据分析TBJ
-                            const tbjStats = analyzeTBJFromParsedData(parsedData);
-                            console.log('TBJ统计:', tbjStats);
-
-                            // 更新TBJ统计信息显示
-                            document.getElementById('totalJumps').textContent = tbjStats.totalJumps;
-                            document.getElementById('successfulTBJ').textContent = tbjStats.successfulTBJ;
-                            document.getElementById('tbjSuccessRate').textContent = tbjStats.tbjSuccessRate;
-                            document.getElementById('maxConsecutiveJumps').textContent = tbjStats.maxConsecutiveJumps;
 
                             // 初始化图表
                             const chartData = convertDemoData(parsedData);
@@ -1305,11 +1257,27 @@
                     initChart(chartData);
 
                     // 更新TBJ统计信息
-                    const tbjStats = analyzeTBJ(frames);
+                    const tbjStats = analyzeTBJFromParsedData(parsedData);
                     document.getElementById('totalJumps').textContent = tbjStats.totalJumps;
                     document.getElementById('successfulTBJ').textContent = tbjStats.successfulTBJ;
                     document.getElementById('tbjSuccessRate').textContent = tbjStats.tbjSuccessRate;
-                    document.getElementById('maxConsecutiveJumps').textContent = tbjStats.maxConsecutiveJumps;
+                    document.getElementById('maxConsecutiveTBJ').textContent = tbjStats.maxConsecutiveTBJ;
+                    
+                    // 显示连续TBJ的详细信息
+                    const detailsElement = document.getElementById('consecutiveTBJDetails');
+                    if (tbjStats.consecutiveTBJData && tbjStats.consecutiveTBJData.length > 0) {
+                        const details = tbjStats.consecutiveTBJData
+                            .filter(data => data.count > 1)  // 只显示连续次数大于1的
+                            .sort((a, b) => b.count - a.count)  // 按连续次数从大到小排序
+                            .map(data => {
+                                const frames = `帧 ${data.startFrame}-${data.endFrame}`;
+                                return `<div class="consecutive-item">${frames}: ${data.count} 次</div>`;
+                            })
+                            .join('');
+                        detailsElement.innerHTML = details || '<div class="consecutive-item">无连续TBJ</div>';
+                    } else {
+                        detailsElement.innerHTML = '<div class="consecutive-item">无连续TBJ</div>';
+                    }
                 });
 
                 demoReader.parse(file);
