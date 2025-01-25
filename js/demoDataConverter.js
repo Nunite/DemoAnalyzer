@@ -49,6 +49,7 @@ function convertDemoData(inputData) {
             moveBack: inputData.moveback_command_frames.includes(frame) ? 1 : 0,
             use: inputData.use_command_frames.includes(frame) ? 1 : 0,
             jump: inputData.jump_command_frames.includes(frame) ? 1 : 0,
+            validJump: inputData.data[frame] === 'start' ? 1 : 0,  // 使用data中的start标记
             ground: inputData.ground_frames.includes(frame),
             duck: inputData.duck_command_frames.includes(frame) ? 1 : 0,
             forward: false, // 根据需要设置

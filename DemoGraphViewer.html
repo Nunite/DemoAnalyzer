@@ -310,6 +310,30 @@
         .analyze-demo {
             cursor: pointer;
         }
+        .tool-option {
+            margin: 10px 0;
+        }
+        .tool-option label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .option-content {
+            margin-left: 10px;
+        }
+        .color-option {
+            display: flex;
+            align-items: center;
+            margin: 5px 0;
+        }
+        .color-option input[type="color"] {
+            margin-right: 10px;
+            width: 30px;
+            height: 20px;
+        }
+        .color-option label {
+            font-weight: normal;
+        }
     </style>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="js/hldemo.min.js"></script>
@@ -331,13 +355,24 @@
         </div>
         <div class="tbj-stats">
             <h3>工具选项</h3>
-            <div class="stat-item">
-                <div class="label">TBJ显示设置</div>
-                <div class="value">
-                    <label>
-                        <input type="checkbox" id="showTBJ" onchange="toggleTBJDisplay()">
-                        显示TBJ数据
-                    </label>
+            <div class="tool-option">
+                <label>TBJ显示设置</label>
+                <div class="option-content">
+                    <input type="checkbox" id="showTBJ" onchange="toggleTBJDisplay()">
+                    <label>显示TBJ数据</label>
+                </div>
+            </div>
+            <div class="tool-option">
+                <label>Duck指令高亮</label>
+                <div class="option-content">
+                    <div class="color-option">
+                        <input type="color" id="duck-start-highlight" value="#A0522D" onchange="updateDuckHighlight()">
+                        <label>起始帧颜色</label>
+                    </div>
+                    <div class="color-option">
+                        <input type="color" id="duck-end-highlight" value="#8B4513" onchange="updateDuckHighlight()">
+                        <label>结束帧颜色</label>
+                    </div>
                 </div>
             </div>
         </div>
@@ -389,6 +424,11 @@
                         <label>jump</label>
                     </div>
                     <div class="command-option">
+                        <input type="color" class="color-picker" id="valid-jump-color" value="#00FF00" style="display: none;">
+                        <span class="color-indicator" style="background: #00FF00" onclick="document.getElementById('valid-jump-color').click()"></span>
+                        <label>有效起跳帧</label>
+                    </div>
+                    <div class="command-option">
                         <input type="color" class="color-picker" id="ground-color" value="#808080" style="display: none;">
                         <span class="color-indicator" style="background: #808080" onclick="document.getElementById('ground-color').click()"></span>
                         <label>ground</label>
@@ -397,6 +437,16 @@
                         <input type="color" class="color-picker" id="duck-color" value="#8B4513" style="display: none;">
                         <span class="color-indicator" style="background: #8B4513" onclick="document.getElementById('duck-color').click()"></span>
                         <label>duck</label>
+                    </div>
+                    <div class="command-option">
+                        <input type="color" class="color-picker" id="duck-start-color" value="#A0522D" style="display: none;">
+                        <span class="color-indicator" style="background: #A0522D" onclick="document.getElementById('duck-start-color').click()"></span>
+                        <label>duck起始帧</label>
+                    </div>
+                    <div class="command-option">
+                        <input type="color" class="color-picker" id="duck-end-color" value="#8B4513" style="display: none;">
+                        <span class="color-indicator" style="background: #8B4513" onclick="document.getElementById('duck-end-color').click()"></span>
+                        <label>duck结束帧</label>
                     </div>
                     <div class="command-option">
                         <input type="color" class="color-picker" id="forward-color" value="#4682B4" style="display: none;">
@@ -743,12 +793,15 @@
                         type: 'bar',
                         xAxisIndex: 6,
                         yAxisIndex: 6,
-                        data: demoData.data.map(d => d.jump),
+                        data: demoData.data.map(d => ({
+                            value: d.jump ? 1 : 0,
+                            itemStyle: {
+                                color: d.validJump ? document.getElementById('valid-jump-color').value : 
+                                                   document.getElementById('jump-color').value
+                            }
+                        })),
                         animation: false,
-                        show: true,
-                        itemStyle: {
-                            color: document.getElementById('jump-color').value
-                        }
+                        show: true
                     },
                     {
                         name: 'ground',
@@ -767,12 +820,35 @@
                         type: 'bar',
                         xAxisIndex: 8,
                         yAxisIndex: 8,
-                        data: demoData.data.map(d => d.duck),
+                        data: demoData.data.map((d, index, array) => {
+                            if (!d.duck) return 0;
+                            
+                            // 检查当前帧是否是一段连续duck的起始或结束
+                            let isStart = false;
+                            let isEnd = false;
+                            
+                            // 判断是否是起始帧：当前帧是duck且前一帧不是duck
+                            if (index === 0 || !array[index - 1].duck) {
+                                isStart = true;
+                            }
+                            
+                            // 判断是否是结束帧：当前帧是duck且后一帧不是duck
+                            if (index === array.length - 1 || !array[index + 1].duck) {
+                                isEnd = true;
+                            }
+                            
+                            // 根据帧的位置返回不同的样式
+                            return {
+                                value: 1,
+                                itemStyle: {
+                                    color: isStart ? document.getElementById('duck-start-color').value :
+                                           isEnd ? document.getElementById('duck-end-color').value :
+                                           document.getElementById('duck-color').value
+                                }
+                            };
+                        }),
                         animation: false,
-                        show: true,
-                        itemStyle: {
-                            color: document.getElementById('duck-color').value
-                        }
+                        show: true
                     },
                     {
                         name: 'forward',
@@ -858,6 +934,13 @@
             if (seriesIndex !== -1) {
                 option.series[seriesIndex].itemStyle.color = color;
                 chart.setOption(option);
+            }
+        }
+
+        function updateDuckHighlight() {
+            // 重新渲染图表以应用新的颜色设置
+            if (window.chart) {
+                initChart();
             }
         }
 
