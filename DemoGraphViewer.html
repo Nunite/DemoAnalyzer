@@ -14,13 +14,16 @@
             padding: 0;
             font-family: Arial, sans-serif;
             background-color: #fff;
+            overflow-x: hidden;
         }
         .container {
             display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            min-height: 100vh;
             padding: 20px;
-            max-width: 1400px;
-            margin: 0 auto 0 300px;
-            gap: 20px;
+            box-sizing: border-box;
         }
         .file-list {
             width: 300px;
@@ -217,12 +220,12 @@
             padding: 10px;
             margin-bottom: 20px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            overflow: visible;  /* 确保内容不被裁剪 */
         }
-        .file-info {
-            text-align: center;
-            font-weight: bold;
-            color: #333;
-            margin-bottom: 10px;
+        .echarts-container {
+            width: 100%;
+            height: 800px;  /* 增加图表高度 */
+            margin: 0 auto;
         }
         .control-panel {
             display: flex;
@@ -230,44 +233,43 @@
             margin-bottom: 20px;
             justify-content: center;
         }
-        .upload-button {
-            background-color: #f0f0f0;
-            padding: 8px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: background-color 0.2s;
+        .file-list {
+            width: 100%;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+            overflow-x: hidden;
         }
-        .upload-button:hover {
-            background-color: #e0e0e0;
-        }
-        .analyze-button {
-            background-color: #ff6b00;
-            color: white;
-            padding: 8px 16px;
-            border-radius: 4px;
-            border: none;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-        .analyze-button:hover {
-            background-color: #ff5500;
-        }
-        .info-text {
-            text-align: center;
-            color: #666;
-            font-style: italic;
-            margin: 10px 0;
-        }
-        .echarts-container {
-            height: 670px;
+        #fileListContent {
             width: 100%;
         }
-        .color-picker {
-            width: 50px;
+        .file-list table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .file-list td {
+            padding: 8px;
+            word-break: break-word;
+        }
+        .command-option {
+            display: flex;
+            align-items: center;
+            margin: 8px 0;
+            gap: 8px;
+        }
+        .color-indicator {
+            width: 20px;
             height: 20px;
-            border: none;
-            padding: 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .color-picker {
+            display: none;
+        }
+        .command-option label {
+            flex: 1;
             margin: 0;
+            cursor: pointer;
         }
         .tbj-info {
             margin-bottom: 20px;
@@ -334,6 +336,149 @@
         .color-option label {
             font-weight: normal;
         }
+        .sidebar {
+            position: fixed;
+            left: -300px;
+            top: 0;
+            width: 300px;
+            height: 100vh;
+            background: #f5f5f5;
+            transition: left 0.3s ease;
+            z-index: 1001;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+            padding: 20px;
+            box-sizing: border-box;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+        .sidebar.open {
+            left: 0;
+        }
+        .sidebar-toggle {
+            position: fixed;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #f5f5f5;
+            border: none;
+            border-radius: 0 4px 4px 0;
+            padding: 10px;
+            cursor: pointer;
+            z-index: 1002;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+        }
+        .sidebar-toggle:hover {
+            background: #e0e0e0;
+        }
+        .right-panel {
+            position: fixed;
+            right: -300px;
+            top: 0;
+            width: 300px;
+            height: 100vh;
+            background: #f5f5f5;
+            transition: right 0.3s ease;
+            z-index: 1001;
+            box-shadow: -2px 0 5px rgba(0,0,0,0.1);
+            padding: 20px;
+            box-sizing: border-box;
+            overflow-y: auto;
+        }
+        .right-panel.open {
+            right: 0;
+        }
+        .right-panel-toggle {
+            position: fixed;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%) rotate(180deg);
+            background: #f5f5f5;
+            border: none;
+            border-radius: 4px 0 0 4px;
+            padding: 10px;
+            cursor: pointer;
+            z-index: 1002;
+            box-shadow: -2px 0 5px rgba(0,0,0,0.1);
+        }
+        .right-panel-toggle:hover {
+            background: #e0e0e0;
+        }
+        .main-content {
+            width: 100%;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .main-content {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .chart-container {
+            width: 100%;
+            background: white;
+            border-radius: 6px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            overflow: visible;  /* 确保内容不被裁剪 */
+        }
+        .echarts-container {
+            width: 100%;
+            height: 800px;
+            margin: 0 auto;
+        }
+        .control-panel {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            width: 100%;
+        }
+        .file-list {
+            width: 100%;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+        #fileListContent {
+            width: 100%;
+        }
+        .file-list table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .file-list td {
+            padding: 8px;
+            word-break: break-word;
+        }
+        /* 添加作者标识的样式 */
+        .author-info {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 5px 10px;
+            border-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .author-info a {
+            color: #333;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .author-info img {
+            width: 20px;
+            height: 20px;
+            vertical-align: middle;
+        }
     </style>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="js/hldemo.min.js"></script>
@@ -349,33 +494,24 @@
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
 </head>
 <body>
+    <div class="author-info">
+        <span>DemoGraphViewer by Lws</span>
+        <a href="https://github.com/Nunite/DemoAnalyzer" target="_blank">
+            <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" alt="GitHub">
+            GitHub
+        </a>
+    </div>
     <div class="container">
-        <div class="file-list" id="fileList">
-            <h3 style="margin-top: 0;">已加载文件</h3>
-        </div>
-        <div class="tbj-stats">
-            <h3>工具选项</h3>
-            <div class="tool-option">
-                <label>TBJ显示设置</label>
-                <div class="option-content">
-                    <input type="checkbox" id="showTBJ" onchange="toggleTBJDisplay()">
-                    <!-- <label>显示TBJ数据</label> -->
-                </div>
+        <!-- 左侧文件面板 -->
+        <div class="sidebar">
+            <div class="file-list" id="fileList">
+                <h3 style="margin-top: 0;">已加载文件</h3>
+                <div id="fileListContent"></div>
             </div>
-            <!-- <div class="tool-option">
-                <label>Duck指令高亮</label>
-                <div class="option-content">
-                    <div class="color-option">
-                        <input type="color" id="duck-start-highlight" value="#A0522D" onchange="updateDuckHighlight()">
-                        <label>起始帧颜色</label>
-                    </div>
-                    <div class="color-option">
-                        <input type="color" id="duck-end-highlight" value="#8B4513" onchange="updateDuckHighlight()">
-                        <label>结束帧颜色</label>
-                    </div>
-                </div>
-            </div> -->
         </div>
+        <button class="sidebar-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">☰</button>
+
+        <!-- 主要内容区域 -->
         <div class="main-content">
             <div class="control-panel">
                 <label class="upload-button">
@@ -387,78 +523,17 @@
             <div class="chart-container">
                 <h3 id="currentFileName" style="text-align: center; margin-bottom: 20px; color: #333;"></h3>
                 <div id="chartContainer" class="echarts-container"></div>
-                <div class="command-panel">
-                    <div class="command-option">
-                        <input type="color" class="color-picker" id="yaw-speed-color" value="#1E90FF" style="display: none;">
-                        <span class="color-indicator" style="background: #1E90FF" onclick="document.getElementById('yaw-speed-color').click()"></span>
-                        <label>Yaw Speed</label>
-                    </div>
-                    <div class="command-option">
-                        <input type="color" class="color-picker" id="use-color" value="#FF4500" style="display: none;">
-                        <span class="color-indicator" style="background: #FF4500" onclick="document.getElementById('use-color').click()"></span>
-                        <label>use</label>
-                    </div>
-                    <div class="command-option">
-                        <input type="color" class="color-picker" id="moveleft-color" value="#32CD32" style="display: none;">
-                        <span class="color-indicator" style="background: #32CD32" onclick="document.getElementById('moveleft-color').click()"></span>
-                        <label>moveleft</label>
-                    </div>
-                    <div class="command-option">
-                        <input type="color" class="color-picker" id="moveright-color" value="#9370DB" style="display: none;">
-                        <span class="color-indicator" style="background: #9370DB" onclick="document.getElementById('moveright-color').click()"></span>
-                        <label>moveright</label>
-                    </div>
-                    <div class="command-option">
-                        <input type="color" class="color-picker" id="moveforward-color" value="#FFD700" style="display: none;">
-                        <span class="color-indicator" style="background: #FFD700" onclick="document.getElementById('moveforward-color').click()"></span>
-                        <label>moveforward</label>
-                    </div>
-                    <div class="command-option">
-                        <input type="color" class="color-picker" id="moveback-color" value="#FF69B4" style="display: none;">
-                        <span class="color-indicator" style="background: #FF69B4" onclick="document.getElementById('moveback-color').click()"></span>
-                        <label>moveback</label>
-                    </div>
-                    <div class="command-option">
-                        <input type="color" class="color-picker" id="jump-color" value="#00CED1" style="display: none;">
-                        <span class="color-indicator" style="background: #00CED1" onclick="document.getElementById('jump-color').click()"></span>
-                        <label>jump</label>
-                    </div>
-                    <div class="command-option">
-                        <input type="color" class="color-picker" id="valid-jump-color" value="#00FF00" style="display: none;">
-                        <span class="color-indicator" style="background: #00FF00" onclick="document.getElementById('valid-jump-color').click()"></span>
-                        <label>有效起跳帧</label>
-                    </div>
-                    <div class="command-option">
-                        <input type="color" class="color-picker" id="ground-color" value="#808080" style="display: none;">
-                        <span class="color-indicator" style="background: #808080" onclick="document.getElementById('ground-color').click()"></span>
-                        <label>ground</label>
-                    </div>
-                    <div class="command-option">
-                        <input type="color" class="color-picker" id="duck-color" value="#8B4513" style="display: none;">
-                        <span class="color-indicator" style="background: #8B4513" onclick="document.getElementById('duck-color').click()"></span>
-                        <label>duck</label>
-                    </div>
-                    <div class="command-option">
-                        <input type="color" class="color-picker" id="duck-start-color" value="#A0522D" style="display: none;">
-                        <span class="color-indicator" style="background: #A0522D" onclick="document.getElementById('duck-start-color').click()"></span>
-                        <label>duck起始帧</label>
-                    </div>
-                    <div class="command-option">
-                        <input type="color" class="color-picker" id="duck-end-color" value="#8B4513" style="display: none;">
-                        <span class="color-indicator" style="background: #8B4513" onclick="document.getElementById('duck-end-color').click()"></span>
-                        <label>duck结束帧</label>
-                    </div>
-                    <div class="command-option">
-                        <input type="color" class="color-picker" id="forward-color" value="#4682B4" style="display: none;">
-                        <span class="color-indicator" style="background: #4682B4" onclick="document.getElementById('forward-color').click()"></span>
-                        <label>forward</label>
-                    </div>
-                    <div class="command-option">
-                        <input type="color" class="color-picker" id="back-color" value="#CD853F" style="display: none;">
-                        <span class="color-indicator" style="background: #CD853F" onclick="document.getElementById('back-color').click()"></span>
-                        <label>back</label>
-                    </div>
-                </div>
+            </div>
+        </div>
+
+        <!-- 右侧控制面板 -->
+        <div class="right-panel">
+            <h3>工具选项</h3>
+            <div class="tool-option">
+                <label>
+                    <input type="checkbox" id="showTBJ" onchange="toggleTBJDisplay()">
+                    TBJ显示设置
+                </label>
             </div>
             <div id="tbjStats" class="tbj-panel">
                 <h4>TBJ 统计</h4>
@@ -479,16 +554,84 @@
                     <div class="value" id="maxConsecutiveJumps">-</div>
                 </div>
             </div>
+            <hr style="margin: 20px 0;">
+            <h3>颜色设置</h3>
+            <div class="command-options">
+                <!-- 颜色选择器 -->
+                <div class="command-option">
+                    <input type="color" class="color-picker" id="yaw-speed-color" value="#1E90FF" style="display: none;">
+                    <span class="color-indicator" style="background: #1E90FF"></span>
+                    <label>Yaw Speed</label>
+                </div>
+                <div class="command-option">
+                    <input type="color" class="color-picker" id="use-color" value="#FF4500" style="display: none;">
+                    <span class="color-indicator" style="background: #FF4500"></span>
+                    <label>use</label>
+                </div>
+                <div class="command-option">
+                    <input type="color" class="color-picker" id="moveleft-color" value="#32CD32" style="display: none;">
+                    <span class="color-indicator" style="background: #32CD32"></span>
+                    <label>moveleft</label>
+                </div>
+                <div class="command-option">
+                    <input type="color" class="color-picker" id="moveright-color" value="#9370DB" style="display: none;">
+                    <span class="color-indicator" style="background: #9370DB"></span>
+                    <label>moveright</label>
+                </div>
+                <div class="command-option">
+                    <input type="color" class="color-picker" id="moveforward-color" value="#FFD700" style="display: none;">
+                    <span class="color-indicator" style="background: #FFD700"></span>
+                    <label>moveforward</label>
+                </div>
+                <div class="command-option">
+                    <input type="color" class="color-picker" id="moveback-color" value="#FF69B4" style="display: none;">
+                    <span class="color-indicator" style="background: #FF69B4"></span>
+                    <label>moveback</label>
+                </div>
+                <div class="command-option">
+                    <input type="color" class="color-picker" id="jump-color" value="#00CED1" style="display: none;">
+                    <span class="color-indicator" style="background: #00CED1"></span>
+                    <label>jump</label>
+                </div>
+                <div class="command-option">
+                    <input type="color" class="color-picker" id="valid-jump-color" value="#00FF00" style="display: none;">
+                    <span class="color-indicator" style="background: #00FF00"></span>
+                    <label>有效起跳帧</label>
+                </div>
+                <div class="command-option">
+                    <input type="color" class="color-picker" id="ground-color" value="#808080" style="display: none;">
+                    <span class="color-indicator" style="background: #808080"></span>
+                    <label>ground</label>
+                </div>
+                <div class="command-option">
+                    <input type="color" class="color-picker" id="duck-color" value="#8B4513" style="display: none;">
+                    <span class="color-indicator" style="background: #8B4513"></span>
+                    <label>duck</label>
+                </div>
+                <div class="command-option">
+                    <input type="color" class="color-picker" id="duck-start-color" value="#A0522D" style="display: none;">
+                    <span class="color-indicator" style="background: #A0522D"></span>
+                    <label>duck起始帧</label>
+                </div>
+                <div class="command-option">
+                    <input type="color" class="color-picker" id="duck-end-color" value="#8B4513" style="display: none;">
+                    <span class="color-indicator" style="background: #8B4513"></span>
+                    <label>duck结束帧</label>
+                </div>
+                <div class="command-option">
+                    <input type="color" class="color-picker" id="forward-color" value="#4682B4" style="display: none;">
+                    <span class="color-indicator" style="background: #4682B4"></span>
+                    <label>forward</label>
+                </div>
+                <div class="command-option">
+                    <input type="color" class="color-picker" id="back-color" value="#CD853F" style="display: none;">
+                    <span class="color-indicator" style="background: #CD853F"></span>
+                    <label>back</label>
+                </div>
+            </div>
         </div>
+        <button class="right-panel-toggle" onclick="document.querySelector('.right-panel').classList.toggle('open')">☰</button>
     </div>
-
-    <footer style="text-align: center; padding: 20px; color: #666; font-size: 14px; margin-top: 20px; border-top: 1px solid #eee;">
-        DemoGraphViewer by Lws 
-        <a href="https://github.com/Nunite/DemoAnalyzer" target="_blank" style="color: #0366d6; text-decoration: none;">
-            <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" alt="GitHub" style="width: 20px; vertical-align: middle; margin: 0 5px;">
-            GitHub
-        </a>
-    </footer>
 
     <script>
         let chart = null;
@@ -1181,6 +1324,49 @@
                 generateFileTable('#fileList');
             }
         }
+    </script>
+    <script>
+        $(document).ready(function() {
+            // 为所有颜色指示器添加点击事件
+            $('.color-indicator').on('click', function() {
+                // 找到对应的颜色选择器并触发点击
+                $(this).siblings('.color-picker').click();
+            });
+
+            // 当颜色选择器值改变时更新指示器颜色
+            $('.color-picker').on('input', function() {
+                // 更新对应的颜色指示器
+                $(this).siblings('.color-indicator').css('background', $(this).val());
+                
+                // 获取当前选择器的ID和颜色值
+                const colorId = $(this).attr('id');
+                const colorValue = $(this).val();
+                
+                // 更新图表颜色
+                updateChartColor(colorId, colorValue);
+            });
+
+            function updateChartColor(colorId, colorValue) {
+                // 根据ID获取对应的数据系列名称
+                const seriesName = colorId.replace('-color', '');
+                
+                // 获取当前的图表选项
+                const option = myChart.getOption();
+                
+                // 遍历所有数据系列
+                option.series.forEach((series, index) => {
+                    if (series.name === seriesName) {
+                        // 更新对应系列的颜色
+                        option.series[index].itemStyle = {
+                            color: colorValue
+                        };
+                    }
+                });
+                
+                // 应用更新后的选项
+                myChart.setOption(option);
+            }
+        });
     </script>
 </body>
 </html>
