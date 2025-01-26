@@ -552,7 +552,6 @@
             </div> -->
             <!-- <p class="info-text">仅支持.xhr和.dem文件格式 (20MB maximum)</p> -->
             <div class="chart-container">
-                <h3 id="currentFileName" style="text-align: center; margin-bottom: 20px; color: #333;"></h3>
                 <div id="chartContainer" class="echarts-container"></div>
             </div>
         </div>
@@ -605,7 +604,7 @@
                 <div class="command-option">
                     <input type="color" class="color-picker" id="use-color" value="#FF4500" style="display: none;">
                     <span class="color-indicator" style="background: #FF4500"></span>
-                    <label>Use</label>
+                    <label>use</label>
                 </div>
                 <div class="command-option">
                     <input type="color" class="color-picker" id="moveleft-color" value="#32CD32" style="display: none;">
@@ -715,29 +714,42 @@
                             const parsedData = parseFrames(frames);
                             console.log('解析后的数据:', parsedData);
 
+                            // 显示文件名
+                            //document.getElementById('fileName').textContent = '当前文件: ' + file.name;
+
                             // 初始化图表
                             const chartData = convertDemoData(parsedData);
+                            chartData.fileName = file.name;  // 添加文件名到数据中
                             initChart(chartData);
 
-                            // 显示文件名
-                            //document.getElementById('currentFileName').textContent = '当前文件：' + file.name;
+                            // 更新TBJ统计信息
+                            const tbjStats = analyzeTBJFromParsedData(parsedData);
+                            document.getElementById('totalJumps').textContent = tbjStats.totalJumps;
+                            document.getElementById('successfulTBJ').textContent = tbjStats.successfulTBJ;
+                            document.getElementById('tbjSuccessRate').textContent = tbjStats.tbjSuccessRate;
+                            document.getElementById('maxConsecutiveTBJ').textContent = tbjStats.maxConsecutiveTBJ;
+                            
+                            // 显示连续TBJ的详细信息
+                            const detailsElement = document.getElementById('consecutiveTBJDetails');
+                            if (tbjStats.consecutiveTBJData && tbjStats.consecutiveTBJData.length > 0) {
+                                const details = tbjStats.consecutiveTBJData
+                                    .filter(data => data.count > 1)  // 只显示连续次数大于1的
+                                    .sort((a, b) => b.count - a.count)  // 按连续次数从大到小排序
+                                    .map(data => {
+                                        const frames = `帧 ${data.startFrame}-${data.endFrame}`;
+                                        return `<div class="consecutive-item">${frames}: ${data.count} 次</div>`;
+                                    })
+                                    .join('');
+                                detailsElement.innerHTML = details || '<div class="consecutive-item">无连续TBJ</div>';
+                            } else {
+                                detailsElement.innerHTML = '<div class="consecutive-item">无连续TBJ</div>';
+                            }
                         } catch (error) {
                             console.error('处理Demo时出错:', error);
                         }
                     };
 
-                    demoReader.onerror = function (error) {
-                        console.error('Demo读取错误:', error);
-                    };
-
-                    try {
-                        const blob = new Blob([e.target.result]);
-                        const demoFile = new File([blob], file.name);
-                        console.log('开始解析demo文件...');
-                        demoReader.parse(demoFile);
-                    } catch (error) {
-                        console.error('创建demo文件时出错:', error);
-                    }
+                    demoReader.parse(file);
                 };
 
                 reader.onerror = function (error) {
@@ -755,15 +767,20 @@
             chart = echarts.init(document.getElementById('chartContainer'));
 
             const option = {
-                title: {
-                    text: '当前文件 - ' + (demoData.fileName || '未选择文件'),
-                    left: 'center',
-                    top: 10,
-                    textStyle: {
-                        fontSize: 16,
-                        color: '#333'
-                    }
-                },
+                title: [
+                    { text: '当前文件：' + demoData.fileName, left: 'center', top: 10, textStyle: { fontSize: 14, color: '#333' } },
+                    { top: 205, left: 5, text: "Yaw Speed", textStyle: { fontSize: 12 } },
+                    { top: 345, left: 5, text: "use", textStyle: { fontSize: 12 } },
+                    { top: 375, left: 5, text: "moveleft", textStyle: { fontSize: 12 } },
+                    { top: 405, left: 5, text: "moveright", textStyle: { fontSize: 12 } },
+                    { top: 435, left: 5, text: "moveforward", textStyle: { fontSize: 12 } },
+                    { top: 465, left: 5, text: "moveback", textStyle: { fontSize: 12 } },
+                    { top: 495, left: 5, text: "jump", textStyle: { fontSize: 12 } },
+                    { top: 525, left: 5, text: "ground", textStyle: { fontSize: 12 } },
+                    { top: 555, left: 5, text: "duck", textStyle: { fontSize: 12 } },
+                    { top: 585, left: 5, text: "forward", textStyle: { fontSize: 12 } },
+                    { top: 615, left: 5, text: "back", textStyle: { fontSize: 12 } }
+                ],
                 tooltip: {
                     trigger: 'axis',
                     formatter: function (params) {
@@ -824,28 +841,38 @@
                     moveOnMouseMove: false
                 }],
                 grid: [
-                    { left: 120, right: 20, top: 90, height: 250, borderWidth: 2, show: true },
-                    { left: 120, right: 20, height: 30, top: 340, borderWidth: 2, show: true },
-                    { left: 120, right: 20, height: 30, top: 370, borderWidth: 2, show: true },
-                    { left: 120, right: 20, height: 30, top: 400, borderWidth: 2, show: true },
-                    { left: 120, right: 20, height: 30, top: 430, borderWidth: 2, show: true },
-                    { left: 120, right: 20, height: 30, top: 460, borderWidth: 2, show: true },
-                    { left: 120, right: 20, height: 30, top: 490, borderWidth: 2, show: true },
-                    { left: 120, right: 20, height: 30, top: 520, borderWidth: 2, show: true },
-                    { left: 120, right: 20, height: 30, top: 550, borderWidth: 2, show: true },
-                    { left: 120, right: 20, height: 30, top: 580, borderWidth: 2, show: true },
-                    { left: 120, right: 20, height: 30, top: 610, borderWidth: 2, show: true }
+                    { left: 120, right: 20, top: 90, height: 250, borderWidth: 2, show: true, borderColor: '#ddd' },
+                    { left: 120, right: 20, height: 30, top: 340, borderWidth: 1, show: true, borderColor: '#ddd' },
+                    { left: 120, right: 20, height: 30, top: 370, borderWidth: 1, show: true, borderColor: '#ddd' },
+                    { left: 120, right: 20, height: 30, top: 400, borderWidth: 1, show: true, borderColor: '#ddd' },
+                    { left: 120, right: 20, height: 30, top: 430, borderWidth: 1, show: true, borderColor: '#ddd' },
+                    { left: 120, right: 20, height: 30, top: 460, borderWidth: 1, show: true, borderColor: '#ddd' },
+                    { left: 120, right: 20, height: 30, top: 490, borderWidth: 1, show: true, borderColor: '#ddd' },
+                    { left: 120, right: 20, height: 30, top: 520, borderWidth: 1, show: true, borderColor: '#ddd' },
+                    { left: 120, right: 20, height: 30, top: 550, borderWidth: 1, show: true, borderColor: '#ddd' },
+                    { left: 120, right: 20, height: 30, top: 580, borderWidth: 1, show: true, borderColor: '#ddd' },
+                    { left: 120, right: 20, height: 30, top: 610, borderWidth: 1, show: true, borderColor: '#ddd' }
                 ],
                 xAxis: Array.from({ length: 11 }, (_, i) => ({
                     type: 'category',
                     data: demoData.data.map(d => d.frame),
                     gridIndex: i,
-                    show: i === 10
+                    show: i === 10,
+                    axisLabel: { show: i === 10 }
                 })),
                 yAxis: Array.from({ length: 11 }, (_, i) => ({
                     type: 'value',
                     gridIndex: i,
-                    show: i === 0,
+                    show: true,
+                    axisLine: { show: false },
+                    axisTick: { show: i === 0 },
+                    splitLine: { 
+                        show: i === 0,
+                        lineStyle: {
+                            color: '#ddd'
+                        }
+                    },
+                    axisLabel: { show: i === 0 },
                     min: i === 0 ? null : 0,
                     max: i === 0 ? null : 1
                 })),
@@ -1017,7 +1044,7 @@
             fetch('hrbg_rabbitrun_outside_0121.59.xhr')
                 .then(response => response.json())
                 .then(demoData => {
-                    document.getElementById('currentFileName').textContent = '当前文件：' + demoData.fileName;
+                    //document.getElementById('fileName').textContent = '当前文件：' + demoData.fileName;
                     initChart(demoData);
                 })
                 .catch(error => {
