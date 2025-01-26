@@ -117,14 +117,14 @@ function analyzeTBJFromParsedData(parsedData) {
             if (!hasJumpBefore && maxConsecutiveLandCount < 5) {
                 stats.successfulTBJ++;
                 
-                // 打印TBJ判定信息
-                console.log(`\n检测到TBJ - 帧: ${frameNum}`);
-                console.log('前5帧状态:');
-                prev5Frames.forEach(f => {
-                    // 如果没有状态信息，则默认为land
-                    console.log(`  帧 ${f}: ${parsedData.data[f] || 'land'}`);
-                });
-                console.log(`  连续land帧数: ${maxConsecutiveLandCount}`);
+                // // 打印TBJ判定信息
+                // console.log(`\n检测到TBJ - 帧: ${frameNum}`);
+                // console.log('前5帧状态:');
+                // prev5Frames.forEach(f => {
+                //     // 如果没有状态信息，则默认为land
+                //     console.log(`  帧 ${f}: ${parsedData.data[f] || 'land'}`);
+                // });
+                // console.log(`  连续land帧数: ${maxConsecutiveLandCount}`);
                 
                 // 处理连续TBJ的统计
                 if (consecutiveStart === null) {
