@@ -146,11 +146,11 @@
 
         .chart-container {
             width: 135%;
-            margin: 100px 0 0 0;  /* 添加顶部边距 */
+            margin: 200px 0 0 0;  /* 添加顶部边距 */
             background: white;
             border-radius: 6px;
             padding: 15px;
-            box-shadow: 0 4px 50px rgba(250, 0, 0, 0.1);
+            box-shadow: 0 4px 30px rgba(250, 0, 0, 0.1);
             box-sizing: border-box;
         }
 
@@ -689,6 +689,9 @@
     <script>
         let chart = null;
         let loadedFiles = []; // 存储已加载的文件
+        let chartState = {
+            dataZoom: null  // 存储滑块状态
+        };
         let currentDemoData = null; // 存储当前的demo数据
 
         function handleFileUpload(event) {
@@ -763,10 +766,20 @@
         }
 
         function initChart(demoData) {
+            // 保存当前的dataZoom状态（如果存在）
+            if (chart && chart.getOption()) {
+                const currentOption = chart.getOption();
+                if (currentOption.dataZoom) {
+                    chartState.dataZoom = currentOption.dataZoom;
+                }
+            }
+
+            // 如果已经存在图表实例，销毁它
             if (chart) {
                 chart.dispose();
             }
-            currentDemoData = demoData; // 保存当前的demo数据
+
+            // 初始化新的图表实例
             chart = echarts.init(document.getElementById('chartContainer'));
 
             const option = {
@@ -1038,6 +1051,11 @@
                     }
                 ]
             };
+
+            // 在设置新的options之前，恢复之前保存的dataZoom状态
+            if (chartState.dataZoom) {
+                option.dataZoom = chartState.dataZoom;
+            }
 
             chart.setOption(option);
         }
