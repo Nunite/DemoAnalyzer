@@ -609,29 +609,30 @@
                 <div class="command-option">
                     <input type="color" class="color-picker" id="moveleft-color" value="#32CD32" style="display: none;">
                     <span class="color-indicator" style="background: #32CD32"></span>
-                    <label>Moveleft</label>
+                    <label>moveleft</label>
                 </div>
                 <div class="command-option">
                     <input type="color" class="color-picker" id="moveright-color" value="#9370DB"
                         style="display: none;">
                     <span class="color-indicator" style="background: #9370DB"></span>
-                    <label>Moveright</label>
+                    <label>moveright</label>
                 </div>
                 <div class="command-option">
                     <input type="color" class="color-picker" id="moveforward-color" value="#FFD700"
                         style="display: none;">
                     <span class="color-indicator" style="background: #FFD700"></span>
-                    <label>Moveforward</label>
+                    <label>moveforward</label>
                 </div>
                 <div class="command-option">
-                    <input type="color" class="color-picker" id="moveback-color" value="#FF69B4" style="display: none;">
+                    <input type="color" class="color-picker" id="moveback-color" value="#FF69B4"
+                        style="display: none;">
                     <span class="color-indicator" style="background: #FF69B4"></span>
-                    <label>Moveback</label>
+                    <label>moveback</label>
                 </div>
                 <div class="command-option">
                     <input type="color" class="color-picker" id="jump-color" value="#00CED1" style="display: none;">
                     <span class="color-indicator" style="background: #00CED1"></span>
-                    <label>Jump</label>
+                    <label>jump</label>
                 </div>
                 <div class="command-option">
                     <input type="color" class="color-picker" id="valid-jump-color" value="#00FF00"
@@ -642,33 +643,33 @@
                 <div class="command-option">
                     <input type="color" class="color-picker" id="ground-color" value="#808080" style="display: none;">
                     <span class="color-indicator" style="background: #808080"></span>
-                    <label>Ground</label>
+                    <label>ground</label>
                 </div>
                 <div class="command-option">
                     <input type="color" class="color-picker" id="duck-color" value="#8B4513" style="display: none;">
                     <span class="color-indicator" style="background: #8B4513"></span>
-                    <label>Duck</label>
+                    <label>duck</label>
                 </div>
                 <div class="command-option">
                     <input type="color" class="color-picker" id="duck-start-color" value="#A0522D"
                         style="display: none;">
                     <span class="color-indicator" style="background: #A0522D"></span>
-                    <label>First duck</label>
+                    <label>Duck start</label>
                 </div>
                 <div class="command-option">
                     <input type="color" class="color-picker" id="duck-end-color" value="#8B4513" style="display: none;">
                     <span class="color-indicator" style="background: #8B4513"></span>
-                    <label>Last duck</label>
+                    <label>Duck end</label>
                 </div>
                 <div class="command-option">
                     <input type="color" class="color-picker" id="forward-color" value="#4682B4" style="display: none;">
                     <span class="color-indicator" style="background: #4682B4"></span>
-                    <label>Forward</label>
+                    <label>forward</label>
                 </div>
                 <div class="command-option">
-                    <input type="color" class="color-picker" id="back-color" value="#CD853F" style="display: none;">
-                    <span class="color-indicator" style="background: #CD853F"></span>
-                    <label>Back</label>
+                    <input type="color" class="color-picker" id="back-color" value="#CD5C5C" style="display: none;">
+                    <span class="color-indicator" style="background: #CD5C5C"></span>
+                    <label>back</label>
                 </div>
             </div>
         </div>
@@ -688,6 +689,7 @@
     <script>
         let chart = null;
         let loadedFiles = []; // 存储已加载的文件
+        let currentDemoData = null; // 存储当前的demo数据
 
         function handleFileUpload(event) {
             console.log('文件上传开始');
@@ -764,6 +766,7 @@
             if (chart) {
                 chart.dispose();
             }
+            currentDemoData = demoData; // 保存当前的demo数据
             chart = echarts.init(document.getElementById('chartContainer'));
 
             const option = {
@@ -884,7 +887,7 @@
                         animation: false,
                         show: true,
                         itemStyle: {
-                            color: document.getElementById('yaw-speed-color').value
+                            color: getColorValue('yaw-speed-color', '#1E90FF')
                         }
                     },
                     {
@@ -896,7 +899,7 @@
                         animation: false,
                         show: true,
                         itemStyle: {
-                            color: document.getElementById('use-color').value
+                            color: getColorValue('use-color', '#FF4500')
                         }
                     },
                     {
@@ -904,11 +907,11 @@
                         type: 'bar',
                         xAxisIndex: 2,
                         yAxisIndex: 2,
-                        data: demoData.data.map(d => d.moveLeft),
+                        data: demoData.data.map(d => d.moveLeft ? 1 : 0),
                         animation: false,
                         show: true,
                         itemStyle: {
-                            color: document.getElementById('moveleft-color').value
+                            color: getColorValue('moveleft-color', '#32CD32')
                         }
                     },
                     {
@@ -916,11 +919,11 @@
                         type: 'bar',
                         xAxisIndex: 3,
                         yAxisIndex: 3,
-                        data: demoData.data.map(d => d.moveRight),
+                        data: demoData.data.map(d => d.moveRight ? 1 : 0),
                         animation: false,
                         show: true,
                         itemStyle: {
-                            color: document.getElementById('moveright-color').value
+                            color: getColorValue('moveright-color', '#9370DB')
                         }
                     },
                     {
@@ -928,11 +931,11 @@
                         type: 'bar',
                         xAxisIndex: 4,
                         yAxisIndex: 4,
-                        data: demoData.data.map(d => d.moveForward),
+                        data: demoData.data.map(d => d.moveForward ? 1 : 0),
                         animation: false,
                         show: true,
                         itemStyle: {
-                            color: document.getElementById('moveforward-color').value
+                            color: getColorValue('moveforward-color', '#FFD700')
                         }
                     },
                     {
@@ -940,11 +943,11 @@
                         type: 'bar',
                         xAxisIndex: 5,
                         yAxisIndex: 5,
-                        data: demoData.data.map(d => d.moveBack),
+                        data: demoData.data.map(d => d.moveBack ? 1 : 0),
                         animation: false,
                         show: true,
                         itemStyle: {
-                            color: document.getElementById('moveback-color').value
+                            color: getColorValue('moveback-color', '#FF69B4')
                         }
                     },
                     {
@@ -955,8 +958,8 @@
                         data: demoData.data.map(d => ({
                             value: d.jump ? 1 : 0,
                             itemStyle: {
-                                color: d.validJump ? document.getElementById('valid-jump-color').value :
-                                    document.getElementById('jump-color').value
+                                color: d.validJump ? getColorValue('valid-jump-color', '#00FF00') :
+                                    getColorValue('jump-color', '#00CED1')
                             }
                         })),
                         animation: false,
@@ -971,7 +974,7 @@
                         animation: false,
                         show: true,
                         itemStyle: {
-                            color: document.getElementById('ground-color').value
+                            color: getColorValue('ground-color', '#808080')
                         }
                     },
                     {
@@ -1000,9 +1003,9 @@
                             return {
                                 value: 1,
                                 itemStyle: {
-                                    color: isStart ? document.getElementById('duck-start-color').value :
-                                        isEnd ? document.getElementById('duck-end-color').value :
-                                            document.getElementById('duck-color').value
+                                    color: isStart ? getColorValue('duck-start-color', '#A0522D') :
+                                        isEnd ? getColorValue('duck-end-color', '#8B4513') :
+                                            getColorValue('duck-color', '#8B4513')
                                 }
                             };
                         }),
@@ -1018,7 +1021,7 @@
                         animation: false,
                         show: true,
                         itemStyle: {
-                            color: document.getElementById('forward-color').value
+                            color: getColorValue('forward-color', '#4682B4')
                         }
                     },
                     {
@@ -1030,13 +1033,18 @@
                         animation: false,
                         show: true,
                         itemStyle: {
-                            color: document.getElementById('back-color').value
+                            color: getColorValue('back-color', '#CD5C5C')
                         }
                     }
                 ]
             };
 
             chart.setOption(option);
+        }
+
+        function getColorValue(elementId, defaultColor) {
+            const element = document.getElementById(elementId);
+            return element ? element.value : defaultColor;
         }
 
         function analyzeDemo() {
@@ -1065,6 +1073,18 @@
 
         document.addEventListener('DOMContentLoaded', function () {
             const colorPickers = document.querySelectorAll('.color-picker');
+            const colorIndicators = document.querySelectorAll('.color-indicator');
+
+            // 为颜色指示器添加点击事件
+            colorIndicators.forEach(indicator => {
+                indicator.addEventListener('click', function() {
+                    // 找到对应的颜色选择器并触发点击
+                    const picker = this.previousElementSibling;
+                    if (picker && picker.classList.contains('color-picker')) {
+                        picker.click();
+                    }
+                });
+            });
 
             // 加载保存的颜色
             colorPickers.forEach(picker => {
@@ -1087,19 +1107,104 @@
         });
 
         function updateChartColor(seriesName, color) {
-            if (!chart) return;
+            if (!chart || !currentDemoData) return;
+            
+            // 更新当前series的颜色
             const option = chart.getOption();
+            
+            // 处理特殊颜色更新
+            if (seriesName === 'Valid jump') {
+                // 当修改valid jump颜色时，更新jump系列
+                const jumpIndex = option.series.findIndex(s => s.name === 'jump');
+                if (jumpIndex !== -1) {
+                    option.series[jumpIndex].data = currentDemoData.data.map(d => ({
+                        value: d.jump ? 1 : 0,
+                        itemStyle: {
+                            color: d.validJump ? color : getColorValue('jump-color', '#00CED1')
+                        }
+                    }));
+                    chart.setOption(option);
+                }
+                return;
+            }
+            
+            if (seriesName === 'Duck start' || seriesName === 'Duck end') {
+                // 当修改duck start或end颜色时，更新duck系列
+                const duckIndex = option.series.findIndex(s => s.name === 'duck');
+                if (duckIndex !== -1) {
+                    option.series[duckIndex].data = currentDemoData.data.map((d, index, array) => {
+                        if (!d.duck) return 0;
+
+                        let isStart = false;
+                        let isEnd = false;
+
+                        if (index === 0 || !array[index - 1].duck) {
+                            isStart = true;
+                        }
+
+                        if (index === array.length - 1 || !array[index + 1].duck) {
+                            isEnd = true;
+                        }
+
+                        return {
+                            value: 1,
+                            itemStyle: {
+                                color: isStart ? getColorValue('duck-start-color', '#A0522D') :
+                                    isEnd ? getColorValue('duck-end-color', '#8B4513') :
+                                        getColorValue('duck-color', '#8B4513')
+                            }
+                        };
+                    });
+                    chart.setOption(option);
+                }
+                return;
+            }
+
+            // 处理普通命令的颜色更新
             const seriesIndex = option.series.findIndex(s => s.name === seriesName);
             if (seriesIndex !== -1) {
-                option.series[seriesIndex].itemStyle.color = color;
-                chart.setOption(option);
-            }
-        }
+                // 特殊处理jump和duck命令
+                if (seriesName === 'jump') {
+                    // 更新jump的数据
+                    option.series[seriesIndex].data = currentDemoData.data.map(d => ({
+                        value: d.jump ? 1 : 0,
+                        itemStyle: {
+                            color: d.validJump ? getColorValue('valid-jump-color', '#00FF00') :
+                                color
+                        }
+                    }));
+                } else if (seriesName === 'duck') {
+                    // 更新duck的数据
+                    option.series[seriesIndex].data = currentDemoData.data.map((d, index, array) => {
+                        if (!d.duck) return 0;
 
-        function updateDuckHighlight() {
-            // 重新渲染图表以应用新的颜色设置
-            if (window.chart) {
-                initChart();
+                        let isStart = false;
+                        let isEnd = false;
+
+                        if (index === 0 || !array[index - 1].duck) {
+                            isStart = true;
+                        }
+
+                        if (index === array.length - 1 || !array[index + 1].duck) {
+                            isEnd = true;
+                        }
+
+                        return {
+                            value: 1,
+                            itemStyle: {
+                                color: isStart ? getColorValue('duck-start-color', '#A0522D') :
+                                    isEnd ? getColorValue('duck-end-color', '#8B4513') :
+                                        color
+                            }
+                        };
+                    });
+                } else {
+                    // 普通命令的颜色更新
+                    option.series[seriesIndex].itemStyle = option.series[seriesIndex].itemStyle || {};
+                    option.series[seriesIndex].itemStyle.color = color;
+                }
+                
+                chart.setOption(option);
             }
         }
 
@@ -1405,49 +1510,6 @@
                 };
 
                 reader.readAsArrayBuffer(file);
-            }
-        });
-    </script>
-    <script>
-        $(document).ready(function () {
-            // 为所有颜色指示器添加点击事件
-            $('.color-indicator').on('click', function () {
-                // 找到对应的颜色选择器并触发点击
-                $(this).siblings('.color-picker').click();
-            });
-
-            // 当颜色选择器值改变时更新指示器颜色
-            $('.color-picker').on('input', function () {
-                // 更新对应的颜色指示器
-                $(this).siblings('.color-indicator').css('background', $(this).val());
-
-                // 获取当前选择器的ID和颜色值
-                const colorId = $(this).attr('id');
-                const colorValue = $(this).val();
-
-                // 更新图表颜色
-                updateChartColor(colorId, colorValue);
-            });
-
-            function updateChartColor(colorId, colorValue) {
-                // 根据ID获取对应的数据系列名称
-                const seriesName = colorId.replace('-color', '');
-
-                // 获取当前的图表选项
-                const option = myChart.getOption();
-
-                // 遍历所有数据系列
-                option.series.forEach((series, index) => {
-                    if (series.name === seriesName) {
-                        // 更新对应系列的颜色
-                        option.series[index].itemStyle = {
-                            color: colorValue
-                        };
-                    }
-                });
-
-                // 应用更新后的选项
-                myChart.setOption(option);
             }
         });
     </script>
