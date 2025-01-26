@@ -1614,10 +1614,15 @@ function handleFileUpload(event) {
                 // 获取demo数据
                 const demoData = convertDemoData(demoReader);
                 
+                // 解析帧数据
+                const frames = demoReader.directoryEntries[1].frames;
+                const parsedFrames = parseFrames(frames);
+                
                 // 分析TBJ数据
                 const parsedData = {
                     jump_command_frames: demoReader.directoryEntries[0].frames.jump_command_frames,
-                    ground_frames: demoReader.directoryEntries[0].frames.ground_frames
+                    ground_frames: demoReader.directoryEntries[0].frames.ground_frames,
+                    data: parsedFrames.jumps_data  // 添加每帧的状态数据
                 };
                 const tbjStats = window.analyzeTBJFromParsedData(parsedData);
                 
@@ -1625,7 +1630,7 @@ function handleFileUpload(event) {
                 document.getElementById('totalJumps').textContent = tbjStats.totalJumps;
                 document.getElementById('successfulTBJ').textContent = tbjStats.successfulTBJ;
                 document.getElementById('tbjSuccessRate').textContent = tbjStats.tbjSuccessRate;
-                document.getElementById('maxConsecutiveJumps').textContent = tbjStats.maxConsecutiveJumps;
+                document.getElementById('maxConsecutiveJumps').textContent = tbjStats.maxConsecutiveTBJ;
                 
                 // 初始化图表
                 initChart(demoData);

@@ -95,9 +95,36 @@ function analyzeTBJFromParsedData(parsedData) {
                 jf < frameNum && jf >= frameNum - 10
             );
 
-            // 如果前10帧内没有其他起跳帧，则这是一个TBJ
-            if (!hasJumpBefore) {
+            // 检查前5帧的状态，计算land状态的帧数
+            const prev5Frames = Array.from({length: 5}, (_, i) => frameNum - (i + 1));
+            let landCount = 0;
+            let consecutiveLandCount = 0;
+            let maxConsecutiveLandCount = 0;
+            
+            prev5Frames.forEach(f => {
+                // 如果没有状态信息，则默认为land
+                const frameState = parsedData.data[f];
+                if (frameState === undefined || frameState === 'land') {
+                    landCount++;
+                    consecutiveLandCount++;
+                    maxConsecutiveLandCount = Math.max(maxConsecutiveLandCount, consecutiveLandCount);
+                } else {
+                    consecutiveLandCount = 0;
+                }
+            });
+
+            // 如果前10帧内没有其他起跳帧，且前5帧中没有连续5帧的land状态，则这是一个TBJ
+            if (!hasJumpBefore && maxConsecutiveLandCount < 5) {
                 stats.successfulTBJ++;
+                
+                // 打印TBJ判定信息
+                console.log(`\n检测到TBJ - 帧: ${frameNum}`);
+                console.log('前5帧状态:');
+                prev5Frames.forEach(f => {
+                    // 如果没有状态信息，则默认为land
+                    console.log(`  帧 ${f}: ${parsedData.data[f] || 'land'}`);
+                });
+                console.log(`  连续land帧数: ${maxConsecutiveLandCount}`);
                 
                 // 处理连续TBJ的统计
                 if (consecutiveStart === null) {
