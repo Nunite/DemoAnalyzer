@@ -39,6 +39,9 @@ function convertDemoData(inputData, fileName = "") {
         const yawAngle = inputData.yaw_angles[frame] || 0;
         const yawSpeed = previousYawAngle !== null ? Number(getAngleDifference(yawAngle,previousYawAngle).toFixed(5)) : 0;
 
+        // 查找当前帧的速度数据
+        const velocityData = inputData.velocities ? inputData.velocities.find(v => v.frame === frame) : null;
+
         const frameData = {
             frame: frame,
             yawAngle: yawAngle,
@@ -53,7 +56,9 @@ function convertDemoData(inputData, fileName = "") {
             ground: inputData.ground_frames.includes(frame),
             duck: inputData.duck_command_frames.includes(frame) ? 1 : 0,
             forward: false, // 根据需要设置
-            back: inputData.moveback_command_frames.includes(frame)
+            back: inputData.moveback_command_frames.includes(frame),
+            horizontalSpeed: velocityData ? velocityData.horizontalSpeed : 0,  // 添加水平速度
+            verticalSpeed: velocityData ? velocityData.verticalSpeed : 0
         };
 
         outputData.data.push(frameData);

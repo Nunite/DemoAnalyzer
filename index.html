@@ -810,6 +810,8 @@
                         // 获取所有数据系列的值
                         const seriesValues = {
                             'Yaw Speed': demoData.data[frameIndex].yawSpeed,
+                            'Horizontal Speed': demoData.data[frameIndex].horizontalSpeed, // 添加水平速度
+                            //'Vertical Speed': demoData.data[frameIndex].verticalSpeed,  // 添加垂直速度
                             'use': demoData.data[frameIndex].use ? 'Yes' : 'No',
                             'moveleft': demoData.data[frameIndex].moveLeft ? 'Yes' : 'No',
                             'moveright': demoData.data[frameIndex].moveRight ? 'Yes' : 'No',
