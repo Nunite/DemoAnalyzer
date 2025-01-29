@@ -2657,7 +2657,7 @@ function parseFrames(frames) {
                 };
                 const horizontalSpeed = Number(Math.sqrt(velocity.x * velocity.x + velocity.y * velocity.y).toFixed(5));
                 const verticalSpeed = velocity.z.toFixed(5);
-                console.log('Frame:', frame.frame, 'Horizontal speed (units/s):', horizontalSpeed);
+                //console.log('Frame:', frame.frame, 'Horizontal speed (units/s):', horizontalSpeed);
                 velocities.push({
                     frame: frame.frame,
                     horizontalSpeed: horizontalSpeed,
