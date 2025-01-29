@@ -543,14 +543,6 @@
 
         <!-- 主要内容区域 -->
         <div class="main-content">
-            <!-- <div class="control-panel">
-                <label class="upload-button">
-                    <input type="file" accept=".xhr,.dem" multiple style="display: none"
-                        onchange="handleFileUpload(event)">
-                    上传数据文件
-                </label>
-            </div> -->
-            <!-- <p class="info-text">仅支持.xhr和.dem文件格式 (20MB maximum)</p> -->
             <div class="chart-container">
                 <div id="chartContainer" class="echarts-container"></div>
             </div>
@@ -675,15 +667,6 @@
         </div>
         <button class="right-panel-toggle"
             onclick="document.querySelector('.right-panel').classList.toggle('open')">☰</button>
-         <!-- <div class="tool-option">
-            <label>选择Demo文件</label>
-            <div class="option-content">
-                <input type="file" id="demoFile" accept=".dem">
-                 <div class="file-info">
-                    当前文件：<span class="filename">未选择文件</span>
-                </div> 
-            </div>
-        </div>  -->
     </div>
 
     <script>
@@ -1374,7 +1357,10 @@
                                         </a>
                                         <div class="file-time">${timeStr}</div>
                                     </div>
-                                    <span class="delete-btn" onclick="deleteFile('${data.name}')" title="删除">×</span>
+                                    <div style="display: flex; gap: 8px;">
+                                        <img src="img/download.png" class="action-btn" onclick="downloadFrames('${data.name}')" title="下载解析数据" style="width: 16px; height: 16px; cursor: pointer;">
+                                        <span class="delete-btn" onclick="deleteFile('${data.name}')" title="删除">×</span>
+                                    </div>
                                 </div>
                             </td>
                         </tr>`;
@@ -1432,7 +1418,7 @@
         function processFile(file, index = 0) {
             storeFile(file).then(() => {
                 const demoReader = new HLDemo.DemoReader();
-                demoReader.onready(function () {
+                demoReader.onready(function() {
                     const frames = demoReader.directoryEntries[1].frames;
                     const parsedData = parseFrames(frames);
 
@@ -1483,55 +1469,41 @@
         }
     </script>
     <script>
-        document.getElementById('demoFile').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                // 显示文件名
-                document.querySelector('.file-info').style.display = 'block';
-                document.querySelector('.filename').textContent = file.name;
-                
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const demoReader = new DemoReader();
-                    demoReader.onready = function () {
+        // 下载解析后的frames数据
+        function downloadFrames(fileName) {
+            retrieveFile(fileName)
+                .then((result) => {
+                    if (!result || !result.file) {
+                        alert('找不到文件！');
+                        return;
+                    }
+
+                    const file = result.file;
+                    const demoReader = new HLDemo.DemoReader();
+                    demoReader.onready(function() {
                         const frames = demoReader.directoryEntries[1].frames;
                         const parsedData = parseFrames(frames);
-
-                        // 初始化图表
-                        const chartData = convertDemoData(parsedData, file.name);
-                        chartData.fileName = file.name;
-                        initChart(chartData);
-
-                        // 更新TBJ统计信息
-                        const tbjStats = analyzeTBJFromParsedData(parsedData);
-                        document.getElementById('totalJumps').textContent = tbjStats.totalJumps;
-                        document.getElementById('successfulTBJ').textContent = tbjStats.successfulTBJ;
-                        document.getElementById('tbjSuccessRate').textContent = tbjStats.tbjSuccessRate;
-                        document.getElementById('maxConsecutiveTBJ').textContent = tbjStats.maxConsecutiveTBJ;
                         
-                        // 显示连续TBJ的详细信息
-                        const detailsElement = document.getElementById('consecutiveTBJDetails');
-                        if (tbjStats.consecutiveTBJData && tbjStats.consecutiveTBJData.length > 0) {
-                            const details = tbjStats.consecutiveTBJData
-                                .filter(data => data.count > 1)  // 只显示连续次数大于1的
-                                .sort((a, b) => b.count - a.count)  // 按连续次数从大到小排序
-                                .map(data => {
-                                    const frames = `帧 ${data.startFrame}-${data.endFrame}`;
-                                    return `<div class="consecutive-item">${frames}: ${data.count} 次</div>`;
-                                })
-                                .join('');
-                            detailsElement.innerHTML = details || '<div class="consecutive-item">无连续TBJ</div>';
-                        } else {
-                            detailsElement.innerHTML = '<div class="consecutive-item">无连续TBJ</div>';
-                        }
-                    };
-
+                        const jsonString = JSON.stringify(parsedData, null, 2);
+                        const blob = new Blob([jsonString], { type: 'application/json' });
+                        const url = URL.createObjectURL(blob);
+                        
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = fileName.replace(/\.[^/.]+$/, '') + '_frames.json';
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                    });
+                    
                     demoReader.parse(file);
-                };
-
-                reader.readAsArrayBuffer(file);
-            }
-        });
+                })
+                .catch((error) => {
+                    console.error('Error retrieving file:', error);
+                    alert('下载失败：' + error);
+                });
+        }
     </script>
 </body>
 
