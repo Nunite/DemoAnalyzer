@@ -499,27 +499,6 @@
             font-weight: 500;
             color: #2196F3;
         }
-
-        .help-icon {
-            display: inline-block;
-            width: 16px;
-            height: 16px;
-            line-height: 16px;
-            text-align: center;
-            border-radius: 50%;
-            background-color: #666;
-            color: white;
-            font-size: 12px;
-            margin-left: 5px;
-            cursor: help;
-        }
-
-        .title-container {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 5px;
-        }
     </style>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="js/hldemo.min.js"></script>
@@ -723,9 +702,36 @@
                             const parsedData = parseFrames(frames);
                             console.log('解析后的数据:', parsedData);
 
-                            // 显示文件名标题
+                            // 显示文件名
                             //document.getElementById('fileName').textContent = '当前文件: ' + file.name;
-                            processFile(file);
+
+                            // 初始化图表
+                            const chartData = convertDemoData(parsedData);
+                            chartData.fileName = file.name;  // 添加文件名到数据中
+                            initChart(chartData);
+
+                            // 更新TBJ统计信息
+                            const tbjStats = analyzeTBJFromParsedData(parsedData);
+                            document.getElementById('totalJumps').textContent = tbjStats.totalJumps;
+                            document.getElementById('successfulTBJ').textContent = tbjStats.successfulTBJ;
+                            document.getElementById('tbjSuccessRate').textContent = tbjStats.tbjSuccessRate;
+                            document.getElementById('maxConsecutiveTBJ').textContent = tbjStats.maxConsecutiveTBJ;
+                            
+                            // 显示连续TBJ的详细信息
+                            const detailsElement = document.getElementById('consecutiveTBJDetails');
+                            if (tbjStats.consecutiveTBJData && tbjStats.consecutiveTBJData.length > 0) {
+                                const details = tbjStats.consecutiveTBJData
+                                    .filter(data => data.count > 1)  // 只显示连续次数大于1的
+                                    .sort((a, b) => b.count - a.count)  // 按连续次数从大到小排序
+                                    .map(data => {
+                                        const frames = `帧 ${data.startFrame}-${data.endFrame}`;
+                                        return `<div class="consecutive-item">${frames}: ${data.count} 次</div>`;
+                                    })
+                                    .join('');
+                                detailsElement.innerHTML = details || '<div class="consecutive-item">无连续TBJ</div>';
+                            } else {
+                                detailsElement.innerHTML = '<div class="consecutive-item">无连续TBJ</div>';
+                            }
                         } catch (error) {
                             console.error('处理Demo时出错:', error);
                         }
@@ -761,14 +767,7 @@
 
             const option = {
                 title: [
-                    { 
-                        text: '当前文件：' + demoData.fileName,
-                        left: 'center',
-                        top: 10,
-                        textStyle: { fontSize: 14, color: '#333' },
-                        subtext: '滚轮移动滑块，Ctrl+滚轮缩放滑块大小。由于渲染性能问题，请尽量保持帧间隔在500以内。',
-                        subtextStyle: { color: '#666', fontSize: 12 }
-                    },
+                    { text: '当前文件：' + demoData.fileName, left: 'center', top: 10, textStyle: { fontSize: 14, color: '#333' } },
                     { top: 205, left: 5, text: "Yaw Speed", textStyle: { fontSize: 12 } },
                     { top: 345, left: 5, text: "use", textStyle: { fontSize: 12 } },
                     { top: 375, left: 5, text: "moveleft", textStyle: { fontSize: 12 } },
@@ -1352,13 +1351,10 @@
                         <tr>
                             <td>
                                 <div class="file-info">
-                                    <div class="title-container">
-                                        <div>
-                                            <a href="#" class="file-name" onclick="processFileFromDatabase('${data.name}', 99);" title="${data.name}">
-                                                ${data.name.length > 25 ? data.name.substring(0, 22) + '...' : data.name}
-                                            </a>
-                                            <span class="help-icon" title="滚轮移动滑块，Ctrl+滚轮缩放滑块大小。由于渲染性能问题，请尽量保持帧间隔在500以内。">?</span>
-                                        </div>
+                                    <div>
+                                        <a href="#" class="file-name" onclick="processFileFromDatabase('${data.name}', 99);" title="${data.name}">
+                                            ${data.name.length > 25 ? data.name.substring(0, 22) + '...' : data.name}
+                                        </a>
                                         <div class="file-time">${timeStr}</div>
                                     </div>
                                     <div style="display: flex; gap: 8px;">
