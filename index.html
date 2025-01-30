@@ -499,6 +499,27 @@
             font-weight: 500;
             color: #2196F3;
         }
+
+        .help-icon {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            line-height: 16px;
+            text-align: center;
+            border-radius: 50%;
+            background-color: #666;
+            color: white;
+            font-size: 12px;
+            margin-left: 5px;
+            cursor: help;
+        }
+
+        .title-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
     </style>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="js/hldemo.min.js"></script>
@@ -702,36 +723,9 @@
                             const parsedData = parseFrames(frames);
                             console.log('解析后的数据:', parsedData);
 
-                            // 显示文件名
+                            // 显示文件名标题
                             //document.getElementById('fileName').textContent = '当前文件: ' + file.name;
-
-                            // 初始化图表
-                            const chartData = convertDemoData(parsedData);
-                            chartData.fileName = file.name;  // 添加文件名到数据中
-                            initChart(chartData);
-
-                            // 更新TBJ统计信息
-                            const tbjStats = analyzeTBJFromParsedData(parsedData);
-                            document.getElementById('totalJumps').textContent = tbjStats.totalJumps;
-                            document.getElementById('successfulTBJ').textContent = tbjStats.successfulTBJ;
-                            document.getElementById('tbjSuccessRate').textContent = tbjStats.tbjSuccessRate;
-                            document.getElementById('maxConsecutiveTBJ').textContent = tbjStats.maxConsecutiveTBJ;
-                            
-                            // 显示连续TBJ的详细信息
-                            const detailsElement = document.getElementById('consecutiveTBJDetails');
-                            if (tbjStats.consecutiveTBJData && tbjStats.consecutiveTBJData.length > 0) {
-                                const details = tbjStats.consecutiveTBJData
-                                    .filter(data => data.count > 1)  // 只显示连续次数大于1的
-                                    .sort((a, b) => b.count - a.count)  // 按连续次数从大到小排序
-                                    .map(data => {
-                                        const frames = `帧 ${data.startFrame}-${data.endFrame}`;
-                                        return `<div class="consecutive-item">${frames}: ${data.count} 次</div>`;
-                                    })
-                                    .join('');
-                                detailsElement.innerHTML = details || '<div class="consecutive-item">无连续TBJ</div>';
-                            } else {
-                                detailsElement.innerHTML = '<div class="consecutive-item">无连续TBJ</div>';
-                            }
+                            processFile(file);
                         } catch (error) {
                             console.error('处理Demo时出错:', error);
                         }
@@ -767,7 +761,14 @@
 
             const option = {
                 title: [
-                    { text: '当前文件：' + demoData.fileName, left: 'center', top: 10, textStyle: { fontSize: 14, color: '#333' } },
+                    { 
+                        text: '当前文件：' + demoData.fileName,
+                        left: 'center',
+                        top: 10,
+                        textStyle: { fontSize: 14, color: '#333' },
+                        subtext: '滚轮移动滑块，Ctrl+滚轮缩放滑块大小。由于渲染性能问题，请尽量保持帧间隔在500以内。',
+                        subtextStyle: { color: '#666', fontSize: 12 }
+                    },
                     { top: 205, left: 5, text: "Yaw Speed", textStyle: { fontSize: 12 } },
                     { top: 345, left: 5, text: "use", textStyle: { fontSize: 12 } },
                     { top: 375, left: 5, text: "moveleft", textStyle: { fontSize: 12 } },
@@ -1351,15 +1352,17 @@
                         <tr>
                             <td>
                                 <div class="file-info">
-                                    <div>
-                                        <a href="#" class="file-name" onclick="processFileFromDatabase('${data.name}', 99);" title="${data.name}">
-                                            ${data.name.length > 25 ? data.name.substring(0, 22) + '...' : data.name}
-                                        </a>
+                                    <div class="title-container">
+                                        <div>
+                                            <a href="#" class="file-name" onclick="processFileFromDatabase('${data.name}', 99);" title="${data.name}">
+                                                ${data.name.length > 25 ? data.name.substring(0, 22) + '...' : data.name}
+                                            </a>
+                                            <span class="help-icon" title="滚轮移动滑块，Ctrl+滚轮缩放滑块大小。由于渲染性能问题，请尽量保持帧间隔在500以内。">?</span>
+                                        </div>
                                         <div class="file-time">${timeStr}</div>
                                     </div>
                                     <div style="display: flex; gap: 8px;">
-                                        <img src="img/download.png" class="action-btn" onclick="downloadParsedFrames('${data.name}')" title="下载解析数据(ParseFrames)" style="width: 16px; height: 16px; cursor: pointer;">
-                                        <img src="img/download.png" class="action-btn" onclick="downloadConvertedData('${data.name}')" title="下载解析数据(ConvertData)" style="width: 16px; height: 16px; cursor: pointer;">
+                                        <img src="img/download.png" class="action-btn" onclick="downloadFogData('${data.name}')" title="下载FOG分析数据" style="width: 16px; height: 16px; cursor: pointer;">
                                         <span class="delete-btn" onclick="deleteFile('${data.name}')" title="删除">×</span>
                                     </div>
                                 </div>
@@ -1470,8 +1473,8 @@
         }
     </script>
     <script>
-        // 下载ParseFrames解析后的数据
-        function downloadParsedFrames(fileName) {
+        // 下载FOG分析数据
+        function downloadFogData(fileName) {
             retrieveFile(fileName)
                 .then((result) => {
                     if (!result || !result.file) {
@@ -1484,51 +1487,15 @@
                     demoReader.onready(function() {
                         const frames = demoReader.directoryEntries[1].frames;
                         const parsedData = parseFrames(frames);
+                        const fogData = calculateFog(parsedData, fileName);
                         
-                        const jsonString = JSON.stringify(parsedData, null, 2);
+                        const jsonString = JSON.stringify(fogData, null, 2);
                         const blob = new Blob([jsonString], { type: 'application/json' });
                         const url = URL.createObjectURL(blob);
                         
                         const a = document.createElement('a');
                         a.href = url;
-                        a.download = fileName.replace(/\.[^/.]+$/, '') + '_parsed_frames.json';
-                        document.body.appendChild(a);
-                        a.click();
-                        document.body.removeChild(a);
-                        URL.revokeObjectURL(url);
-                    });
-                    
-                    demoReader.parse(file);
-                })
-                .catch((error) => {
-                    console.error('Error retrieving file:', error);
-                    alert('下载失败：' + error);
-                });
-        }
-
-        // 下载ConvertData解析后的数据
-        function downloadConvertedData(fileName) {
-            retrieveFile(fileName)
-                .then((result) => {
-                    if (!result || !result.file) {
-                        alert('找不到文件！');
-                        return;
-                    }
-
-                    const file = result.file;
-                    const demoReader = new HLDemo.DemoReader();
-                    demoReader.onready(function() {
-                        const frames = demoReader.directoryEntries[1].frames;
-                        const parsedData = parseFrames(frames);
-                        const convertedData = convertDemoData(parsedData, fileName);
-                        
-                        const jsonString = JSON.stringify(convertedData, null, 2);
-                        const blob = new Blob([jsonString], { type: 'application/json' });
-                        const url = URL.createObjectURL(blob);
-                        
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = fileName.replace(/\.[^/.]+$/, '') + '_converted_data.json';
+                        a.download = fileName.replace(/\.[^/.]+$/, '') + '_fog_data.json';
                         document.body.appendChild(a);
                         a.click();
                         document.body.removeChild(a);

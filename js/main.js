@@ -2606,6 +2606,7 @@ function parseFrames(frames) {
     const ground_frames = [];
     const jump_command_frames = [];
     const duck_command_frames = [];
+    const minus_duck_command_frames = []; 
     const moveleft_command_frames = [];
     const moveright_command_frames = [];
     const moveforward_command_frames = [];
@@ -2675,6 +2676,7 @@ function parseFrames(frames) {
                 ducking = true;
                 duckStartFrame = frame.frame;
             } else if (frame.command.includes('-duck')) {
+                minus_duck_command_frames.push(frame.frame);  // 记录-duck帧
                 if (ducking && duckStartFrame !== -1) {
                     for (let i = duckStartFrame; i <= frame.frame; i++) {
                         if (!duck_command_frames.includes(i)) {
@@ -2869,6 +2871,7 @@ function parseFrames(frames) {
         jump_command_frames,
         ground_frames,
         duck_command_frames,
+        minus_duck_command_frames,  // 添加-duck帧到返回值
         yaw_angles,
         velocities,  // 添加速度数据到返回值
         timer: {
