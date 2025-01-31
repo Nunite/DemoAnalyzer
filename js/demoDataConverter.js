@@ -20,7 +20,6 @@ function convertDemoData(inputData, fileName = "") {
     inputData.moveleft_command_frames.forEach(frame => allFrames.add(frame));
     inputData.moveright_command_frames.forEach(frame => allFrames.add(frame));
     inputData.moveforward_command_frames.forEach(frame => allFrames.add(frame));
-
     inputData.moveback_command_frames.forEach(frame => allFrames.add(frame));
 
     inputData.jump_command_frames.forEach(frame => allFrames.add(frame));
@@ -41,7 +40,7 @@ function convertDemoData(inputData, fileName = "") {
     sortedFrames.forEach(frame => {
         const yawAngle = inputData.yaw_angles[frame] || 0;
         const yawSpeed = previousYawAngle !== null ? Number(getAngleDifference(yawAngle,previousYawAngle).toFixed(5)) : 0;
-
+        const fuser2 = Number(inputData.fuser2[frame]).toFixed(2) || 0;
         // 查找当前帧的速度数据
         const velocityData = inputData.velocities ? inputData.velocities.find(v => v.frame === frame) : null;
 
@@ -62,7 +61,8 @@ function convertDemoData(inputData, fileName = "") {
             forward: false, // 根据需要设置
             back: inputData.moveback_command_frames.includes(frame),
             horizontalSpeed: velocityData ? velocityData.horizontalSpeed : 0,  // 添加水平速度
-            verticalSpeed: velocityData ? velocityData.verticalSpeed : 0
+            verticalSpeed: velocityData ? velocityData.verticalSpeed : 0,
+            fuser2:fuser2,
         };
 
         outputData.data.push(frameData);
@@ -185,7 +185,7 @@ function calculateFog(inputData, fileName = "") {
     const duckFrames = new Set(inputData.duck_command_frames || []);
     const frameData = inputData.data || {};
     const velocities = inputData.velocities || [];
-
+    const fuser2 = inputData.fuser2 || {};  // 确保fuser2是一个对象
     // 创建速度查找字典
     const velocityDict = {};
     velocities.forEach(v => {
@@ -198,9 +198,10 @@ function calculateFog(inputData, fileName = "") {
     let fog2Count = 0;
     let fog3plusCount = 0;
     let tempSpeed = 0;
-
+    
     // 遍历所有帧
     Object.entries(frameData).forEach(([frameStr, state]) => {
+        var Jumpfactor = 0;
         const frame = parseInt(frameStr);
         if (state !== 'start') return;
 
@@ -213,6 +214,15 @@ function calculateFog(inputData, fileName = "") {
                 break; // 一旦遇到非地面帧就停止
             }
         }
+
+        // 使用fuser2[frame]获取当前帧的fuser2值，如果不存在则使用0
+        const currentFuser2 = Number(fuser2[frame] || 0);
+        // 在计算过程中保持精度
+        Jumpfactor = parseFloat(((100.0 - currentFuser2 * 0.001 * 19.0) * 0.0096).toFixed(3));
+        
+        if(Jumpfactor ===0.96) Jumpfactor = 1;
+
+
 
         // 处理特殊情况
         const displayFog = fogValue === 6 ? 'FOG1' : fogValue;
@@ -263,6 +273,10 @@ function calculateFog(inputData, fileName = "") {
         let displaySpeed = horizontalSpeed;
         if (displaySpeed > 299.973) displaySpeed = 239.98;
 
+        let fog2Speed = horizontalSpeed*Jumpfactor;
+        if (fog2Speed > 299.973) fog2Speed = 239.98;
+
+
         // 更新FOG计数
         if (typeof displayFog === 'number') {
             if (displayFog === 1) fog1Count++;
@@ -275,9 +289,12 @@ function calculateFog(inputData, fileName = "") {
         result.push({
             Frame: frame,
             FOG: displayFog,
+            Fuser2: fuser2[frame],
             JumpState: jumpState,
+            JumpFactor: parseFloat(Jumpfactor.toFixed(3)),  // 使用parseFloat确保正确的数字格式
             HorizontalSpeed: Number(displaySpeed.toFixed(2)),
             Fog1Speed: Number(fog1Speed.toFixed(2)),
+            Fog2Speed: Number(fog2Speed.toFixed(2)),
             AddSpeed: Number((displaySpeed - tempSpeed).toFixed(2)),
             FOG1: fog1Count,
             FOG2: fog2Count,

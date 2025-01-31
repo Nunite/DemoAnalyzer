@@ -795,6 +795,7 @@
                             'Yaw Speed': demoData.data[frameIndex].yawSpeed,
                             'Horizontal Speed': demoData.data[frameIndex].horizontalSpeed, // 添加水平速度
                             //'Vertical Speed': demoData.data[frameIndex].verticalSpeed,  // 添加垂直速度
+                            'fuser2':demoData.data[frameIndex].fuser2,
                             'use': demoData.data[frameIndex].use ? 'Yes' : 'No',
                             'moveleft': demoData.data[frameIndex].moveLeft ? 'Yes' : 'No',
                             'moveright': demoData.data[frameIndex].moveRight ? 'Yes' : 'No',
@@ -1421,7 +1422,7 @@
                 demoReader.onready(function() {
                     const frames = demoReader.directoryEntries[1].frames;
                     const parsedData = parseFrames(frames);
-
+                    console.log(parsedData);
                     // 初始化图表
                     const chartData = convertDemoData(parsedData, file.name);
                     chartData.fileName = file.name;
