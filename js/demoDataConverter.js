@@ -225,7 +225,7 @@ function calculateFog(inputData, fileName = "") {
 
 
         // 处理特殊情况
-        const displayFog = fogValue === 6 ? 'FOG1' : fogValue;
+        const displayFog = fogValue === 6 ? 1 : fogValue;
 
         // 判断跳跃状态
         let jumpState = 'Bhop'; // 默认为Bhop
@@ -282,7 +282,7 @@ function calculateFog(inputData, fileName = "") {
             if (displayFog === 1) fog1Count++;
             else if (displayFog === 2) fog2Count++;
             else if (displayFog >= 3) fog3plusCount++;
-        } else if (displayFog === 'FOG1') {
+        } else if (displayFog === 1) {
             fog1Count++;
         }
 
