@@ -267,15 +267,27 @@ function calculateFog(inputData, fileName = "") {
         }
 
         // 获取当前帧的速度数据
-        const horizontalSpeed = velocityDict[frame] || 0;
-        const fog1Speed = horizontalSpeed;
+        let horizontalSpeed = velocityDict[frame] || 0;
+
         
+        if (horizontalSpeed > 299.973&&velocityDict[frame + 1]>290) {
+            const prevSpeed = velocityDict[frame - 1] || horizontalSpeed;
+            const nextSpeed = velocityDict[frame + 1] || horizontalSpeed;
+            horizontalSpeed = (prevSpeed + nextSpeed) / 2;
+        }
+        let fog1Speed = horizontalSpeed;
+        if (fogValue===2){
+            fog1Speed = horizontalSpeed/Jumpfactor;
+        }
+
+        let fog2Speed = horizontalSpeed;
+        if(fogValue===1){
+            fog2Speed = horizontalSpeed*Jumpfactor;
+        }
+        //if (fog2Speed > 299.973) fog2Speed = 239.98;
+
         let displaySpeed = horizontalSpeed;
         if (displaySpeed > 299.973) displaySpeed = 239.98;
-
-        let fog2Speed = horizontalSpeed*Jumpfactor;
-        if (fog2Speed > 299.973) fog2Speed = 239.98;
-
 
         // 更新FOG计数
         if (typeof displayFog === 'number') {

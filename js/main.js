@@ -980,6 +980,71 @@ function parseFrames(frames) {
         
         let on_ground = false;
 
+        if (frame.type === 1) {
+            // type 1 (NetworkMessages)
+            
+
+            
+            if (frame.demoInfo.refParams.onground === 1) {
+                on_ground = true;
+                ground_frames.push(frame.frame);
+            }  
+            
+            if (on_ground && jump_frame == frame.frame) {
+                if (jumps_data[prev_frame] === 'air') {
+                    // in some cases the previous jump ends at the same frame when the new jump begins, this is true for example if a player jumps a LJ and then proceeds to do FOG1 BJ.
+                    // mark the previous frame as "land" for the previous jump - uq-checker for example works by the same logic.
+                    jumps_data[prev_frame] = 'land';
+                }
+                jumps_data[frame.frame] = 'start'; 
+                jumping = true;
+                jump_started_frame = frame.frame;
+                prev_land = false;
+            }
+            
+            if (on_ground && jump_started_frame != frame.frame && jump_frame !== false) {
+                // player lands the jump, jump ends
+                if (jumps_data[prev_land] && jumps_data[prev_land] == 'land') {
+                    /**
+                     * The player can land one jump "twice": for example when a player lands
+                     * on a bhop block and gets teleported back, the player basically lands twice.
+                     * Since the first land is recorded, we don't have to record the 2nd land.
+                     */
+                } else {
+                    // player lands, the jump ends
+                    jumps_data[frame.frame] = 'land'; 
+                    prev_land = frame.frame;
+                }
+                
+                jumping = false;
+                jump_frame = false;
+            }
+            
+            if (!on_ground && jumping) {
+                jumps_data[frame.frame] = 'air'; // player is in the air while jumped
+            }
+            
+            prev_frame = frame.frame;
+            
+            if (frame.msg) {
+                const type_id = frame.msg[0];
+                if (type_id == 13) {
+                    demo_user_info = parseMessage(frame.msg);
+                } else if (type_id > 64) {
+                    // get timer data here from UserMessage
+                    const user_message = parseMessage(frame.msg);
+                    if (user_message) {
+                        if (user_message.includes('Timer started')) {
+                            timer_started_frame = frame;
+                        }
+                        if (user_message.includes('Time:')) {
+                            timer_ended_frame = frame;
+                        }
+                    }
+                }
+            }
+        }
+
         if(frame.type === 4) {
             if (previousOrigin) {
                 const dx = frame.origin[0] - previousOrigin[0];
@@ -991,9 +1056,9 @@ function parseFrames(frames) {
                     y: dy / 0.01,
                     z: dz / 0.01
                 };
-                const horizontalSpeed = Number(Math.sqrt(velocity.x * velocity.x + velocity.y * velocity.y).toFixed(5));
+                let rawHorizontalSpeed = Math.sqrt(velocity.x * velocity.x + velocity.y * velocity.y);
+                let horizontalSpeed = Number(rawHorizontalSpeed.toFixed(5));
                 const verticalSpeed = velocity.z.toFixed(5);
-                //console.log('Frame:', frame.frame, 'Horizontal speed (units/s):', horizontalSpeed);
                 velocities.push({
                     frame: frame.frame,
                     horizontalSpeed: horizontalSpeed,
@@ -1122,70 +1187,7 @@ function parseFrames(frames) {
                 yaw_angles[`${frame.frame}`] = yaw_angle;
             }
         
-        if (frame.type === 1) {
-            // type 1 (NetworkMessages)
-            
 
-            
-            if (frame.demoInfo.refParams.onground === 1) {
-                on_ground = true;
-                ground_frames.push(frame.frame);
-            }  
-            
-            if (on_ground && jump_frame == frame.frame) {
-                if (jumps_data[prev_frame] === 'air') {
-                    // in some cases the previous jump ends at the same frame when the new jump begins, this is true for example if a player jumps a LJ and then proceeds to do FOG1 BJ.
-                    // mark the previous frame as "land" for the previous jump - uq-checker for example works by the same logic.
-                    jumps_data[prev_frame] = 'land';
-                }
-                jumps_data[frame.frame] = 'start'; 
-                jumping = true;
-                jump_started_frame = frame.frame;
-                prev_land = false;
-            }
-            
-            if (on_ground && jump_started_frame != frame.frame && jump_frame !== false) {
-                // player lands the jump, jump ends
-                if (jumps_data[prev_land] && jumps_data[prev_land] == 'land') {
-                    /**
-                     * The player can land one jump "twice": for example when a player lands
-                     * on a bhop block and gets teleported back, the player basically lands twice.
-                     * Since the first land is recorded, we don't have to record the 2nd land.
-                     */
-                } else {
-                    // player lands, the jump ends
-                    jumps_data[frame.frame] = 'land'; 
-                    prev_land = frame.frame;
-                }
-                
-                jumping = false;
-                jump_frame = false;
-            }
-            
-            if (!on_ground && jumping) {
-                jumps_data[frame.frame] = 'air'; // player is in the air while jumped
-            }
-            
-            prev_frame = frame.frame;
-            
-            if (frame.msg) {
-                const type_id = frame.msg[0];
-                if (type_id == 13) {
-                    demo_user_info = parseMessage(frame.msg);
-                } else if (type_id > 64) {
-                    // get timer data here from UserMessage
-                    const user_message = parseMessage(frame.msg);
-                    if (user_message) {
-                        if (user_message.includes('Timer started')) {
-                            timer_started_frame = frame;
-                        }
-                        if (user_message.includes('Time:')) {
-                            timer_ended_frame = frame;
-                        }
-                    }
-                }
-            }
-        }
         
         // 计算fuser2的值
         if (frame.frame > 0) {
