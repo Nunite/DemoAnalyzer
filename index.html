@@ -68,7 +68,27 @@
         .file-list .file-info {
             display: flex;
             justify-content: space-between;
-            align-items: flex-start;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .file-list .action-buttons {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .file-list .action-btn {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+            padding: 2px;
+        }
+
+        .file-list .action-btn:hover {
+            background-color: #e0e0e0;
+            border-radius: 3px;
         }
 
         .file-list .file-name {
@@ -79,6 +99,7 @@
             text-overflow: ellipsis;
             max-width: 200px;
             display: block;
+            cursor: pointer;
         }
 
         .file-list .file-name:hover {
@@ -96,12 +117,13 @@
             cursor: pointer;
             font-size: 16px;
             line-height: 1;
-            margin-left: 8px;
-            flex-shrink: 0;
+            padding: 2px 6px;
+            border-radius: 3px;
         }
 
         .delete-btn:hover {
-            color: #bd2130;
+            background-color: #dc3545;
+            color: white;
         }
 
         .tbj-stats {
@@ -498,6 +520,46 @@
         .file-info .filename {
             font-weight: 500;
             color: #2196F3;
+        }
+
+        .download-buttons {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-left: auto;
+        }
+
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #f9f9f9;
+            min-width: 120px;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            z-index: 1;
+            right: 0;
+            border-radius: 4px;
+        }
+
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+
+        .dropdown-content a {
+            color: black;
+            padding: 8px 12px;
+            text-decoration: none;
+            display: block;
+            font-size: 14px;
+        }
+
+        .dropdown-content a:hover {
+            background-color: #f1f1f1;
+            border-radius: 4px;
         }
     </style>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -1352,17 +1414,22 @@
                         <tr>
                             <td>
                                 <div class="file-info">
-                                    <div>
-                                        <a href="#" class="file-name" onclick="processFileFromDatabase('${data.name}', 99);" title="${data.name}">
-                                            ${data.name.length > 25 ? data.name.substring(0, 22) + '...' : data.name}
-                                        </a>
-                                        <div class="file-time">${timeStr}</div>
-                                    </div>
-                                    <div style="display: flex; gap: 8px;">
-                                        <img src="img/download.png" class="action-btn" onclick="downloadFogData('${data.name}')" title="下载FOG分析数据" style="width: 16px; height: 16px; cursor: pointer;">
+                                    <a href="#" class="file-name" onclick="processFileFromDatabase('${data.name}', 99);" title="${data.name}">
+                                        ${data.name.length > 25 ? data.name.substring(0, 22) + '...' : data.name}
+                                    </a>
+                                    <div class="download-buttons">
+                                        <div class="dropdown">
+                                            <img src="img/download.png" class="action-btn" title="下载数据">
+                                            <div class="dropdown-content">
+                                                <a href="#" onclick="downloadFogData('${data.name}')">FOG数据</a>
+                                                <a href="#" onclick="downloadDemoData('${data.name}')">Demo数据</a>
+                                                <a href="#" onclick="downloadFramesData('${data.name}')">Frames数据</a>
+                                            </div>
+                                        </div>
                                         <span class="delete-btn" onclick="deleteFile('${data.name}')" title="删除">×</span>
                                     </div>
                                 </div>
+                                <div class="file-time">${timeStr}</div>
                             </td>
                         </tr>`;
                     });
@@ -1422,7 +1489,7 @@
                 demoReader.onready(function() {
                     const frames = demoReader.directoryEntries[1].frames;
                     const parsedData = parseFrames(frames);
-                    console.log(parsedData);
+                    //console.log(parsedData);
                     // 初始化图表
                     const chartData = convertDemoData(parsedData, file.name);
                     chartData.fileName = file.name;
@@ -1493,6 +1560,88 @@
                         const a = document.createElement('a');
                         a.href = url;
                         a.download = fileName.replace(/\.[^/.]+$/, '') + '_fog_data.json';
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                    });
+                    
+                    demoReader.parse(file);
+                })
+                .catch((error) => {
+                    console.error('Error retrieving file:', error);
+                    alert('下载失败：' + error);
+                });
+        }
+    </script>
+    <script>
+        // 下载Demo数据
+        function downloadDemoData(fileName) {
+            retrieveFile(fileName)
+                .then((result) => {
+                    if (!result || !result.file) {
+                        alert('找不到文件！');
+                        return;
+                    }
+
+                    const file = result.file;
+                    const demoReader = new HLDemo.DemoReader();
+                    demoReader.onready(function() {
+                        const frames = demoReader.directoryEntries[1].frames;
+                        const parsedData = parseFrames(frames);
+                        if (!parsedData || Object.keys(parsedData).length === 0) {
+                            alert('解析Demo数据失败！');
+                            return;
+                        }
+                        const demoData = convertDemoData(parsedData, fileName);
+                        
+                        const jsonString = JSON.stringify(demoData, null, 2);
+                        const blob = new Blob([jsonString], { type: 'application/json' });
+                        const url = URL.createObjectURL(blob);
+                        
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = fileName.replace(/\.[^/.]+$/, '') + '_demo_data.json';
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                    });
+                    
+                    demoReader.parse(file);
+                })
+                .catch((error) => {
+                    console.error('Error retrieving file:', error);
+                    alert('下载失败：' + error);
+                });
+        }
+
+        // 下载Frames数据
+        function downloadFramesData(fileName) {
+            retrieveFile(fileName)
+                .then((result) => {
+                    if (!result || !result.file) {
+                        alert('找不到文件！');
+                        return;
+                    }
+
+                    const file = result.file;
+                    const demoReader = new HLDemo.DemoReader();
+                    demoReader.onready(function() {
+                        const frames = demoReader.directoryEntries[1].frames;
+                        const framesData = parseFrames(frames);
+                        if (!framesData || Object.keys(framesData).length === 0) {
+                            alert('解析Frames数据失败！');
+                            return;
+                        }
+                        
+                        const jsonString = JSON.stringify(framesData, null, 2);
+                        const blob = new Blob([jsonString], { type: 'application/json' });
+                        const url = URL.createObjectURL(blob);
+                        
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = fileName.replace(/\.[^/.]+$/, '') + '_frames_data.json';
                         document.body.appendChild(a);
                         a.click();
                         document.body.removeChild(a);
