@@ -1,16 +1,18 @@
-
 /* 防止滚动条导致的页面跳动 */
 html {
     overflow-y: scroll;
     scrollbar-gutter: stable;
+    background-color: #1c1c1e;
+    color: #ffffff;
 }
 
 body {
     margin: 0;
     padding: 0;
-    font-family: Arial, sans-serif;
-    background-color: #fff;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background-color: #1c1c1e;
     overflow-x: hidden;
+    color: #ffffff;
 }
 
 .container {
@@ -23,14 +25,16 @@ body {
     gap: 20px;
     max-width: 1400px;
     margin: 0 auto;
+    background-color: #1c1c1e;
 }
 
 .file-list {
     width: 300px;
-    background: #f5f5f5;
-    border-radius: 6px;
+    background: #2c2c2e;
+    border-radius: 12px;
     padding: 15px;
     height: fit-content;
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .file-list-header {
@@ -42,6 +46,7 @@ body {
 
 .file-list-header h3 {
     margin: 0;
+    color: #ffffff;
 }
 
 .file-list table {
@@ -49,15 +54,16 @@ body {
     border-collapse: collapse;
     margin-bottom: 1rem;
     font-size: 14px;
+    color: #ffffff;
 }
 
 .file-list td {
     padding: 8px;
-    border-bottom: 1px solid #ddd;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .file-list tr:hover {
-    background-color: #f0f0f0;
+    background-color: rgba(255, 255, 255, 0.1);
 }
 
 .file-list .file-info {
@@ -82,12 +88,12 @@ body {
 }
 
 .file-list .action-btn:hover {
-    background-color: #e0e0e0;
+    background-color: #3c3c3e;
     border-radius: 3px;
 }
 
 .file-list .file-name {
-    color: #007bff;
+    color: #0a84ff;
     text-decoration: none;
     white-space: nowrap;
     overflow: hidden;
@@ -102,13 +108,13 @@ body {
 }
 
 .file-list .file-time {
-    color: #666;
+    color: #98989d;
     font-size: 12px;
     margin-top: 4px;
 }
 
 .delete-btn {
-    color: #dc3545;
+    color: #ff453a;
     cursor: pointer;
     font-size: 16px;
     line-height: 1;
@@ -117,8 +123,8 @@ body {
 }
 
 .delete-btn:hover {
-    background-color: #dc3545;
-    color: white;
+    background-color: #ff453a;
+    color: #1c1c1e;
 }
 
 .tbj-stats {
@@ -126,11 +132,12 @@ body {
     right: 370px;
     top: 110px;
     width: 180px;
-    background: #f5f5f5;
+    background: #2c2c2e;
     border-radius: 6px;
     padding: 10px;
     height: fit-content;
     z-index: 1000;
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .tbj-stats h3 {
@@ -144,13 +151,13 @@ body {
 }
 
 .tbj-stats .stat-item .label {
-    color: #666;
+    color: #98989d;
     margin-bottom: 3px;
 }
 
 .tbj-stats .stat-item .value {
     font-weight: bold;
-    color: #333;
+    color: #ffffff;
 }
 
 .main-content {
@@ -164,11 +171,12 @@ body {
 .chart-container {
     width: 135%;
     margin: 200px 0 0 0;  /* 添加顶部边距 */
-    background: rgb(255, 255, 255);
+    background: #2c2c2e;
     border-radius: 6px;
     padding: 15px;
-    box-shadow: 0 4px 30px rgba(250, 0, 0, 0.1);
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
     box-sizing: border-box;
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .echarts-container {
@@ -211,12 +219,13 @@ body {
     align-items: center;
     margin: 8px 0;
     gap: 8px;
+    color: #ffffff;
 }
 
 .color-indicator {
     width: 20px;
     height: 20px;
-    border: 1px solid #ccc;
+    border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 4px;
     cursor: pointer;
 }
@@ -234,8 +243,9 @@ body {
 .tbj-info {
     margin-bottom: 20px;
     padding: 15px;
-    background: #f5f5f5;
+    background: #2c2c2e;
     border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .stat-item {
@@ -257,17 +267,18 @@ body {
 }
 
 .tbj-panel {
-    background: #fff;
+    background: #2c2c2e;
     border-radius: 8px;
     padding: 15px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .tbj-panel h4 {
     margin: 0 0 15px 0;
-    color: #333;
+    color: #ffffff;
     font-size: 16px;
-    border-bottom: 2px solid #eee;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.1);
     padding-bottom: 8px;
 }
 
@@ -278,13 +289,13 @@ body {
 }
 
 .stat-item label {
-    color: #666;
+    color: #98989d;
     font-size: 14px;
     min-width: 120px;
 }
 
 .stat-item span {
-    color: #333;
+    color: #ffffff;
     font-size: 14px;
     font-weight: 500;
 }
@@ -304,17 +315,19 @@ body {
 }
 
 .consecutive-item {
-    background: #f5f5f5;
+    background: #3c3c3e;
     border-radius: 4px;
     padding: 6px 12px;
     font-size: 13px;
     display: block;
     width: fit-content;
     margin-left: 0px;  /* 与其他标签对齐 */
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .highlight-stat {
-    color: #2196F3;
+    color: #0a84ff;
     font-weight: bold;
 }
 
@@ -324,14 +337,15 @@ body {
     top: 0;
     width: 300px;
     height: 100vh;
-    background: #f5f5f5;
+    background: #2c2c2e;
     transition: left 0.3s ease;
     z-index: 1001;
-    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.3);
     padding: 20px;
     box-sizing: border-box;
     overflow-y: auto;
     overflow-x: hidden;
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .sidebar.open {
@@ -343,17 +357,19 @@ body {
     left: 0;
     top: 50%;
     transform: translateY(-50%);
-    background: #f5f5f5;
+    background: #2c2c2e;
     border: none;
     border-radius: 0 4px 4px 0;
     padding: 10px;
     cursor: pointer;
     z-index: 1002;
-    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.3);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .sidebar-toggle:hover {
-    background: #e0e0e0;
+    background: #3c3c3e;
 }
 
 .right-panel {
@@ -362,13 +378,14 @@ body {
     top: 0;
     width: 300px;
     height: 100vh;
-    background: #f5f5f5;
+    background: #2c2c2e;
     transition: right 0.3s ease;
     z-index: 1001;
-    box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
+    box-shadow: -2px 0 5px rgba(0, 0, 0, 0.3);
     padding: 20px;
     box-sizing: border-box;
     overflow-y: auto;
+    border-left: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .right-panel.open {
@@ -380,35 +397,39 @@ body {
     right: 0;
     top: 50%;
     transform: translateY(-50%) rotate(180deg);
-    background: #f5f5f5;
+    background: #2c2c2e;
     border: none;
     border-radius: 4px 0 0 4px;
     padding: 10px;
     cursor: pointer;
     z-index: 1002;
-    box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
+    box-shadow: -2px 0 5px rgba(0, 0, 0, 0.3);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .right-panel-toggle:hover {
-    background: #e0e0e0;
+    background: #3c3c3e;
 }
 
 .author-info {
     position: fixed;
     top: 10px;
     right: 10px;
-    background: rgba(255, 255, 255, 0.9);
+    background: rgba(44, 44, 46, 0.9);
     padding: 5px 10px;
     border-radius: 4px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
     z-index: 1000;
     display: flex;
     align-items: center;
     gap: 10px;
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .author-info a {
-    color: #333;
+    color: #ffffff;
     text-decoration: none;
     display: flex;
     align-items: center;
@@ -429,16 +450,16 @@ body {
     transform: translateX(-50%);
     z-index: 1000;
     padding: 8px 16px;
-    background: #f8f9fa;
-    border: 1px solid #dee2e6;
+    background: #2c2c2e;
+    border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 0 0 6px 6px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     cursor: pointer;
     transition: all 0.3s ease;
 }
 
 .upload-btn-container:hover {
-    background: #e9ecef;
+    background: #3c3c3e;
 }
 
 .upload-btn-container label {
@@ -446,7 +467,7 @@ body {
     align-items: center;
     gap: 8px;
     cursor: pointer;
-    color: #495057;
+    color: #ffffff;
     font-size: 14px;
 }
 
@@ -464,8 +485,8 @@ body {
     left: 50%;
     transform: translateX(-50%);
     padding: 8px 12px;
-    background-color: #333;
-    color: white;
+    background-color: #3c3c3e;
+    color: #ffffff;
     border-radius: 4px;
     font-size: 12px;
     white-space: nowrap;
@@ -483,7 +504,7 @@ body {
     transform: translateX(-50%);
     border-width: 5px;
     border-style: solid;
-    border-color: #333 transparent transparent transparent;
+    border-color: #3c3c3e transparent transparent transparent;
 }
 
 .upload-container:hover .upload-tooltip {
@@ -492,29 +513,31 @@ body {
 }
 
 .disclaimer {
-    color: #666;
+    color: #98989d;
     font-size: 12px;
     margin-top: 15px;
     padding: 8px;
     border-radius: 4px;
-    background-color: #f8f8f8;
+    background-color: #2c2c2e;
     text-align: center;
     font-style: italic;
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .file-info {
     margin: 10px 0;
     padding: 8px 12px;
-    background-color: #f8f8f8;
+    background-color: #2c2c2e;
     border-radius: 4px;
     font-size: 14px;
-    color: #333;
+    color: #ffffff;
     display: none;  /* 默认隐藏 */
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .file-info .filename {
     font-weight: 500;
-    color: #2196F3;
+    color: #0a84ff;
 }
 
 .download-buttons {
@@ -532,12 +555,13 @@ body {
 .dropdown-content {
     display: none;
     position: absolute;
-    background-color: #f9f9f9;
+    background-color: #2c2c2e;
     min-width: 120px;
-    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.3);
     z-index: 1;
     right: 0;
     border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .dropdown:hover .dropdown-content {
@@ -545,7 +569,7 @@ body {
 }
 
 .dropdown-content a {
-    color: black;
+    color: #ffffff;
     padding: 8px 12px;
     text-decoration: none;
     display: block;
@@ -553,6 +577,25 @@ body {
 }
 
 .dropdown-content a:hover {
-    background-color: #f1f1f1;
+    background-color: #3c3c3e;
     border-radius: 4px;
+}
+
+/* 滚动条样式 */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #2c2c2e;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #98989d;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #767680;
 }

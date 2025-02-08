@@ -936,6 +936,7 @@ function parseDemo(file, index, is_archive=false) {
 
 function parseFrames(frames) {
     // declare bunch of helper stuff
+    //console.log(frames);
     const jumps_data = {};
     const ground_frames = [];
     const jump_command_frames = [];
@@ -973,6 +974,14 @@ function parseFrames(frames) {
     let demo_user_info = false;
     // 在函数开始处添加这个变量
     let previousOrigin = null;
+    
+    // 添加 origin 对象
+    const origin = {
+        x: {},
+        y: {},
+        z: {}
+    };
+    
     frames.forEach((frame) => {
         if (frame.frame === 0) {
             //return;
@@ -1065,7 +1074,15 @@ function parseFrames(frames) {
                     verticalSpeed: verticalSpeed
                 });
             }
+
             previousOrigin = [...frame.origin];
+            
+            // 在 type === 4 的情况下添加 origin 数据收集
+            if (frame.origin) {
+                origin.x[frame.frame] = Number(frame.origin[0].toFixed(5));
+                origin.y[frame.frame] = Number(frame.origin[1].toFixed(5));
+                origin.z[frame.frame] = Number(frame.origin[2].toFixed(5));
+            }
         }
         if (frame.type === 3) {
             // type 3 (ConsoleCommand)
@@ -1228,6 +1245,7 @@ function parseFrames(frames) {
         yaw_angles,
         velocities,  // 添加速度数据到返回值
         fuser2,     // 添加fuser2到返回值
+        origin,     // 添加 origin 到返回值
         timer: {
             start: { frame: timer_started_frame.frame, time: timer_started_frame.time },
             end: { frame: timer_ended_frame.frame, time: timer_ended_frame.time },

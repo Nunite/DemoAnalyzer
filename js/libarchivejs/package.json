@@ -11,7 +11,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "esbuild": "^0.19.12",
+    "esbuild": "file:",
     "esbuild-plugin-copy": "^2.1.1",
     "libarchive.js": "^2.0.0"
   }
