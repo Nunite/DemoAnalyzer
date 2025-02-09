@@ -88,6 +88,15 @@
                     注意：本工具的分析结果仅供参考，请勿盲目作为判定依据
                 </div>
             </div>
+            <div id="speedStats" class="tbj-panel">
+                <h4>平均速度统计</h4>
+                <div id="timerSpeedDetails">
+                    <!-- 动态填充计时器速度数据 -->
+                </div>
+                <div class="disclaimer">
+                    注意：速度统计基于计时器起止帧计算
+                </div>
+            </div>
             <hr style="margin: 20px 0;">
             <h3>颜色设置</h3>
             <div class="command-options">
@@ -994,10 +1003,12 @@
                     //console.log(parsedData);
                     // 初始化图表
                     const chartData = convertDemoData(parsedData, file.name);
+                    //console.log(chartData);
                     chartData.fileName = file.name;
                     currentDemoData = chartData;
                     initChart(chartData);
                     AllFramesNum = frames.length;
+                    
                     // 更新TBJ统计信息
                     const tbjStats = analyzeTBJFromParsedData(parsedData);
                     document.getElementById('totalJumps').textContent = tbjStats.totalJumps;
@@ -1019,6 +1030,29 @@
                         detailsElement.innerHTML = details || '<div class="consecutive-item">无连续TBJ</div>';
                     } else {
                         detailsElement.innerHTML = '<div class="consecutive-item">无连续TBJ</div>';
+                    }
+                    
+                    // 更新平均速度统计信息
+                    const speedDetailsElement = document.getElementById('timerSpeedDetails');
+                    if (chartData.timerStats && chartData.timerStats.length > 0) {
+                        const speedDetails = chartData.timerStats
+                            .map(timer => {
+                                return `
+                                    <div class="stat-item speed-stat-item">
+                                        <div class="speed-main-info">
+                                            <span class="speed-value">${timer.averageSpeed}</span>
+                                            <span class="speed-unit">u/s</span>
+                                        </div>
+                                        <div class="speed-details">
+                                            <div class="frame-range">帧范围: ${timer.startFrame}-${timer.endFrame}</div>
+                                            <div class="frame-duration">持续: ${timer.frameDuration} 帧</div>
+                                        </div>
+                                    </div>`;
+                            })
+                            .join('');
+                        speedDetailsElement.innerHTML = speedDetails || '<div class="stat-item">无计时器数据</div>';
+                    } else {
+                        speedDetailsElement.innerHTML = '<div class="stat-item">无计时器数据</div>';
                     }
                 });
 

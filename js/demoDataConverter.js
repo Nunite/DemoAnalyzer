@@ -26,14 +26,70 @@ function convertDemoData(inputData, fileName = "") {
     inputData.ground_frames.forEach(frame => allFrames.add(frame));
     inputData.duck_command_frames.forEach(frame => allFrames.add(frame));
     inputData.minus_duck_command_frames.forEach(frame => allFrames.add(frame));
+
     // 将帧号排序
     const sortedFrames = Array.from(allFrames).sort((a, b) => a - b);
 
     // 创建输出数据结构
     const outputData = {
-        fileName: fileName, // 使用传入的文件名
-        data: []
+        fileName: fileName,
+        data: [],
+        timerStats: [] // 新增timer统计数据
     };
+
+    // 初始化timer数据结构（如果不存在）
+    if (!inputData.timer) {
+        inputData.timer = {
+            start: { frame: [] },
+            end: { frame: [] }
+        };
+    }
+
+    // // 检查并打印输入数据结构
+    // console.log('Input data structure:', {
+    //     hasTimer: !!inputData.timer,
+    //     timerStructure: inputData.timer,
+    //     velocities: inputData.velocities ? inputData.velocities.length : 0
+    // });
+
+    // 处理timer数据
+    if (inputData.timer && inputData.timer.start && inputData.timer.end) {
+        // 获取timer帧号
+        const startFrame = parseInt(inputData.timer.start.frame);
+        const endFrame = parseInt(inputData.timer.end.frame);
+        
+        // //console.log('Timer frames:', {
+        //     start: startFrame,
+        //     end: endFrame
+        // });
+        
+        if (!isNaN(startFrame) && !isNaN(endFrame) && startFrame < endFrame) {
+            let totalSpeed = 0;
+            let frameCount = 0;
+            
+            // 计算从起始帧到结束帧之间的所有帧的平均速度
+            for (let frame = startFrame; frame <= endFrame; frame++) {
+                const velocityData = inputData.velocities ? inputData.velocities.find(v => v.frame === frame) : null;
+                if (velocityData) {
+                    totalSpeed += velocityData.horizontalSpeed;
+                    frameCount++;
+                }
+            }
+            //console.log(totalSpeed,frameCount);
+            const averageSpeed = frameCount > 0 ? Number((totalSpeed / frameCount).toFixed(2)) : 0;
+            //console.log(`Timer: Frames ${startFrame}-${endFrame}, Average Speed: ${averageSpeed}`);
+
+            outputData.timerStats.push({
+                startFrame: startFrame,
+                endFrame: endFrame,
+                frameDuration: endFrame - startFrame,
+                averageSpeed: averageSpeed,
+                index: 1
+            });
+        }
+    } else {
+        console.log('No valid timer data found in input');
+    }
 
     // 处理每一帧的数据
     let previousYawAngle = null;
