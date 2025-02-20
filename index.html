@@ -98,6 +98,34 @@
                 </div>
             </div>
             <hr style="margin: 20px 0;">
+            <h3>记录对比</h3>
+            <div class="compare-records">
+                <button id="compareRecordsBtn" class="compare-btn" onclick="openCompareDialog()">
+                    对比记录
+                </button>
+            </div>
+            
+            <!-- 添加对比记录的弹窗 -->
+            <div id="compareDialog" class="modal">
+                <div class="modal-content">
+                    <h4>选择要对比的记录</h4>
+                    <div class="record-select">
+                        <div class="record-item">
+                            <label>新记录:</label>
+                            <select id="newRecordSelect"></select>
+                        </div>
+                        <div class="record-item">
+                            <label>老记录:</label>
+                            <select id="oldRecordSelect"></select>
+                        </div>
+                    </div>
+                    <div class="modal-buttons">
+                        <button onclick="compareRecords()">开始对比</button>
+                        <button onclick="closeCompareDialog()">取消</button>
+                    </div>
+                </div>
+            </div>
+            <hr style="margin: 20px 0;">
             <h3>颜色设置</h3>
             <div class="command-options">
                 <!-- 颜色选择器 -->
@@ -1071,6 +1099,241 @@
                 // 刷新文件列表
                 generateFileTable('#fileList');
             }
+        }
+
+        // 打开对比弹窗
+        function openCompareDialog() {
+            const dialog = document.getElementById('compareDialog');
+            dialog.style.display = 'block';
+            
+            // 获取所有已加载的demo文件
+            retrieveAllFiles().then(files => {
+                const newSelect = document.getElementById('newRecordSelect');
+                const oldSelect = document.getElementById('oldRecordSelect');
+                
+                // 清空现有选项
+                newSelect.innerHTML = '';
+                oldSelect.innerHTML = '';
+                
+                // 只添加demo文件
+                files.forEach(file => {
+                    if (file.file.name.endsWith('.dem')) {  // 只显示demo文件
+                        const option = document.createElement('option');
+                        option.value = file.file.name;
+                        option.textContent = file.file.name;
+                        
+                        newSelect.appendChild(option.cloneNode(true));
+                        oldSelect.appendChild(option);
+                    }
+                });
+            });
+        }
+
+        // 关闭对比弹窗
+        function closeCompareDialog() {
+            document.getElementById('compareDialog').style.display = 'none';
+        }
+
+        // 对比记录
+        function compareRecords() {
+            const newRecordId = document.getElementById('newRecordSelect').value;
+            const oldRecordId = document.getElementById('oldRecordSelect').value;
+            
+            if (!newRecordId || !oldRecordId) {
+                alert('请选择要对比的记录');
+                return;
+            }
+            
+            Promise.all([
+                retrieveFile(newRecordId),
+                retrieveFile(oldRecordId)
+            ]).then(([newRecord, oldRecord]) => {
+                console.log("New Record:", newRecord); // 调试输出
+                console.log("Old Record:", oldRecord); // 调试输出
+                
+                // 直接使用DemoReader解析文件
+                const newDemoReader = new HLDemo.DemoReader();
+                const oldDemoReader = new HLDemo.DemoReader();
+                
+                Promise.all([
+                    new Promise((resolve) => {
+                        newDemoReader.onready = function() {
+                            const frames = newDemoReader.directoryEntries[1].frames;
+                            const parsedData = parseFrames(frames);
+                            const processedData = preprocessOriginData(parsedData);
+                            resolve(processedData);
+                        };
+                        newDemoReader.parse(newRecord.file);
+                    }),
+                    new Promise((resolve) => {
+                        oldDemoReader.onready = function() {
+                            const frames = oldDemoReader.directoryEntries[1].frames;
+                            const parsedData = parseFrames(frames);
+                            const processedData = preprocessOriginData(parsedData);
+                            resolve(processedData);
+                        };
+                        oldDemoReader.parse(oldRecord.file);
+                    })
+                ]).then(([newRecordData, oldRecordData]) => {
+                    console.log("Processed New Record Data:", newRecordData);
+                    console.log("Processed Old Record Data:", oldRecordData);
+                    
+                    const frameDistances = calculateFrameDistances(newRecordData, oldRecordData);
+                    console.log("Frame Distances:", frameDistances); // 调试输出
+                    
+                    // 保存结果
+                    const resultBlob = new Blob(
+                        [JSON.stringify(frameDistances, null, 2)],
+                        { type: 'application/json' }
+                    );
+                    const url = URL.createObjectURL(resultBlob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `frame_distances_${newRecordId.split('.')[0]}_vs_${oldRecordId.split('.')[0]}.json`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    
+                    closeCompareDialog();
+                }).catch(error => {
+                    console.error('Error processing demo files:', error);
+                    alert('处理记录时出错');
+                });
+            }).catch(error => {
+                console.error('Error retrieving files:', error);
+                alert('获取文件时出错');
+            });
+        }
+
+        // 添加预处理函数
+        function preprocessOriginData(data) {
+            const startFrame = data.timer.start.frame;
+            const endFrame = data.timer.end.frame;
+            const processedData = { x: {}, y: {}, z: {} };
+
+            // 遍历指定范围内的帧
+            for (let frame = startFrame; frame <= endFrame; frame++) {
+                const frameStr = frame.toString();
+                const newFrameStr = (frame - startFrame).toString();  // 从0开始的新帧序号
+                
+                if (frameStr in data.origin.x && 
+                    frameStr in data.origin.y && 
+                    frameStr in data.origin.z) {
+                    processedData.x[newFrameStr] = data.origin.x[frameStr];
+                    processedData.y[newFrameStr] = data.origin.y[frameStr];
+                    processedData.z[newFrameStr] = data.origin.z[frameStr];
+                }
+            }
+
+            return {
+                timer: data.timer,
+                origin: processedData
+            };
+        }
+
+        // 修改calculateFrameDistances函数
+        function calculateFrameDistances(newRecordData, oldRecordData) {
+            console.log("Timer Data:", {
+                startFrame: newRecordData.timer.start.frame,
+                endFrame: newRecordData.timer.end.frame,
+                oldStartFrame: oldRecordData.timer.start.frame,
+                oldEndFrame: oldRecordData.timer.end.frame
+            });
+            
+            const frameDistances = {};
+            const newStartFrame = newRecordData.timer.start.frame;
+            const newEndFrame = newRecordData.timer.end.frame;
+            const oldStartFrame = oldRecordData.timer.start.frame;
+            const oldEndFrame = oldRecordData.timer.end.frame;
+            
+            // 新记录的帧范围
+            const newFrameRange = newEndFrame - newStartFrame;
+            // 老记录的帧范围
+            const oldFrameRange = oldEndFrame - oldStartFrame;
+            
+            console.log("Frame Ranges:", {
+                new: newFrameRange,
+                old: oldFrameRange,
+                newData: Object.keys(newRecordData.origin.x).length,
+                oldData: Object.keys(oldRecordData.origin.x).length
+            });
+            
+            // 处理每一帧
+            for (let frame = 0; frame <= newFrameRange; frame++) {
+                const frameStr = frame.toString();
+                
+                // 获取当前点的坐标
+                const currentPoint = {
+                    x: parseFloat(newRecordData.origin.x[frameStr]),
+                    y: parseFloat(newRecordData.origin.y[frameStr]),
+                    z: parseFloat(newRecordData.origin.z[frameStr])
+                };
+                
+                // 计算实际距离（如果同帧存在）
+                let realDistance = null;
+                if (frameStr in oldRecordData.origin.x) {
+                    const sameFramePoint = {
+                        x: parseFloat(oldRecordData.origin.x[frameStr]),
+                        y: parseFloat(oldRecordData.origin.y[frameStr]),
+                        z: parseFloat(oldRecordData.origin.z[frameStr])
+                    };
+                    realDistance = Math.sqrt(
+                        (currentPoint.x - sameFramePoint.x) ** 2 +
+                        (currentPoint.y - sameFramePoint.y) ** 2 +
+                        (currentPoint.z - sameFramePoint.z) ** 2
+                    );
+                }
+                
+                // 寻找最近的帧
+                let minDist = Infinity;
+                let closestFrame = null;
+                
+                // 遍历老记录的所有可能帧
+                for (let oldFrameRaw = oldStartFrame; oldFrameRaw <= oldEndFrame; oldFrameRaw++) {
+                    const oldFrame = oldFrameRaw - oldStartFrame;  // 转换为相对帧号
+                    const oldFrameStr = oldFrame.toString();
+                    
+                    if (!(oldFrameStr in oldRecordData.origin.x)) continue;
+                    
+                    const oldPoint = {
+                        x: parseFloat(oldRecordData.origin.x[oldFrameStr]),
+                        y: parseFloat(oldRecordData.origin.y[oldFrameStr]),
+                        z: parseFloat(oldRecordData.origin.z[oldFrameStr])
+                    };
+                    
+                    // 计算z坐标差
+                    const zDiff = oldPoint.z - currentPoint.z;
+                    if (zDiff >= 64.0) continue;
+                    
+                    // 只计算x和y轴的距离
+                    const dist = Math.sqrt(
+                        (currentPoint.x - oldPoint.x) ** 2 +
+                        (currentPoint.y - oldPoint.y) ** 2
+                    );
+                    
+                    // 检查总距离
+                    if (dist < 720.0 && dist < minDist) {
+                        minDist = dist;
+                        closestFrame = oldFrame;
+                    }
+                }
+                
+                // 记录符合条件的帧数据
+                if (closestFrame !== null && minDist < 720.0) {
+                    frameDistances[frameStr] = {
+                        realdistance: realDistance !== null ? Math.round(realDistance * 100) / 100 : null,
+                        closetdistance: Math.round(minDist * 100) / 100,
+                        timediffence: Math.round((frame - closestFrame) / 100.0 * 100) / 100,
+                        new_frame: frame + newStartFrame,
+                        old_frame: closestFrame + oldStartFrame,
+                        new_relative_frame: frame,
+                        old_relative_frame: closestFrame
+                    };
+                }
+            }
+            
+            return frameDistances;
         }
     </script>
     <script>
