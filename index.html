@@ -99,6 +99,81 @@
 .modal-buttons button:last-child {
     background: #3c3c3e;
 }
+
+.export-options {
+    margin: 20px 0;
+}
+
+.option-item {
+    margin: 10px 0;
+}
+
+.option-item label {
+    display: flex;
+    align-items: center;
+    color: #ffffff;
+    cursor: pointer;
+}
+
+.option-item input[type="checkbox"] {
+    margin-right: 8px;
+}
+
+.export-select {
+    width: 100%;
+    padding: 8px;
+    background: #3c3c3e;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    color: #ffffff;
+    margin-top: 5px;
+}
+
+.option-group {
+    margin: 15px 0;
+    padding: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+}
+
+.group-label {
+    color: #ffffff;
+    margin-bottom: 10px;
+    display: block;
+}
+
+.width-input-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 5px;
+}
+
+.export-input {
+    flex: 1;
+    padding: 8px;
+    background: #3c3c3e;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    color: #ffffff;
+}
+
+.unit {
+    color: #ffffff;
+}
+
+.reset-btn {
+    padding: 6px 12px;
+    background: #3c3c3e;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    color: #ffffff;
+    cursor: pointer;
+}
+
+.reset-btn:hover {
+    background: #4c4c4e;
+}
 </style>
 
 </head>
@@ -294,6 +369,63 @@
         </div>
         <button class="right-panel-toggle"
             onclick="document.querySelector('.right-panel').classList.toggle('open')">☰</button>
+    </div>
+
+    <!-- 添加导出图片设置弹窗 -->
+    <div id="exportDialog" class="modal">
+        <div class="modal-content">
+            <h4>导出图片设置</h4>
+            <div class="export-options">
+                <!-- 网格线设置 -->
+                <div class="option-item">
+                    <label>
+                        <input type="checkbox" id="showGridLines" checked>
+                        显示网格线
+                    </label>
+                </div>
+                
+                <!-- 图片质量设置 -->
+                <div class="option-item">
+                    <label>图片质量：</label>
+                    <select id="imageQuality" class="export-select">
+                        <option value="1">普通</option>
+                        <option value="2" selected>高清</option>
+                        <option value="3">超清</option>
+                    </select>
+                </div>
+
+                <!-- 图表显示设置 -->
+                <div class="option-group">
+                    <label class="group-label">图表显示：</label>
+                    <div class="option-item">
+                        <label>
+                            <input type="checkbox" id="showTitle" checked>
+                            显示标题
+                        </label>
+                    </div>
+                    <div class="option-item">
+                        <label>
+                            <input type="checkbox" id="showDataZoom" checked>
+                            显示缩放控件
+                        </label>
+                    </div>
+                </div>
+
+                <!-- 自定义宽度设置 -->
+                <div class="option-item">
+                    <label>自定义宽度：</label>
+                    <div class="width-input-group">
+                        <input type="number" id="customWidth" class="export-input" min="100" step="100">
+                        <span class="unit">%</span>
+                        <button class="reset-btn" onclick="resetWidth()">重置</button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button onclick="exportChart()">导出</button>
+                <button onclick="closeExportDialog()">取消</button>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -703,32 +835,79 @@
             });
         }
         
-        function downloadchart(filename,frameNum){
-        filename=filename.split('.').slice(0, -1).join('.');
-        const chartContainer = document.querySelector('.chart-container');
-        //currentDemoData.fileName = currentFileName;
-        // 设置宽度（支持百分比/像素值）
-        const tempwidth = chartContainer.style.width;
-        customwidth = Math.ceil(AllFramesNum / 196 * 10) + '%';
-        console.log(customwidth); // 输出 "4080%"
+        function downloadchart(filename) {
+            // 打开导出设置弹窗
+            document.getElementById('exportDialog').style.display = 'block';
+            // 保存当前文件名供后续使用
+            window.currentExportFilename = filename;
+            // 设置默认宽度
+            const defaultWidth = Math.ceil(AllFramesNum / 196 * 10);
+            document.getElementById('customWidth').value = defaultWidth;
+        }
 
-        chartContainer.style.width = customwidth; 
-        initChart(currentDemoData);
-            // 获取图表实例后
-            const imgUrl = chart.getDataURL({
-            type: 'png',
-            pixelRatio: 2, // 提高清晰度
-            excludeComponents: ['toolbox'], // 排除不必要组件
-            backgroundColor: '#1c1c1e' // 设置背景
-            });
+        function closeExportDialog() {
+            document.getElementById('exportDialog').style.display = 'none';
+        }
+
+        function resetWidth() {
+            const defaultWidth = Math.ceil(AllFramesNum / 196 * 10);
+            document.getElementById('customWidth').value = defaultWidth;
+        }
+
+        function exportChart() {
+            let filename = window.currentExportFilename;
+            const showGridLines = document.getElementById('showGridLines').checked;
+            const imageQuality = parseInt(document.getElementById('imageQuality').value);
+            const showTitle = document.getElementById('showTitle').checked;
+            const showDataZoom = document.getElementById('showDataZoom').checked;
+            const customWidth = document.getElementById('customWidth').value;
             
+            if (!filename) {
+                alert('导出失败：文件名无效');
+                return;
+            }
+
+            filename = filename.split('.').slice(0, -1).join('.');
+            const chartContainer = document.querySelector('.chart-container');
+            const tempwidth = chartContainer.style.width;
+            chartContainer.style.width = customWidth + '%';
+
+            // 保存当前图表配置
+            const originalOption = chart.getOption();
+            const exportOption = JSON.parse(JSON.stringify(originalOption));
+
+            // 根据用户选择修改配置
+            if (!showGridLines) {
+                exportOption.xAxis.forEach(axis => {
+                    axis.splitLine = { show: false };
+                });
+                exportOption.yAxis.forEach(axis => {
+                    axis.splitLine = { show: false };
+                });
+            }
+
+            // 控制标题显示
+            // 应用导出配置
+            chart.setOption(exportOption);
+
+            // 导出图片
+            const imgUrl = chart.getDataURL({
+                type: 'png',
+                pixelRatio: 2,
+                excludeComponents: ['toolbox'],
+                backgroundColor: '#1c1c1e'
+            });
+
             // 下载图片
             const link = document.createElement('a');
-            link.download = filename+'.png';
+            link.download = filename + '.png';
             link.href = imgUrl;
             link.click();
+
+            // 恢复原始状态
             chartContainer.style.width = tempwidth;
-            initChart(currentDemoData);
+            chart.setOption(originalOption);
+            closeExportDialog();
         }
 
         function getColorValue(elementId, defaultColor) {
@@ -1047,7 +1226,7 @@
                                                 <a href="#" onclick="downloadFogData('${data.name}')">FOG数据</a>
                                                 <a href="#" onclick="downloadDemoData('${data.name}')">Demo数据</a>
                                                 <a href="#" onclick="downloadFramesData('${data.name}')">Frames数据</a>
-                                                <a href="#" onclick="downloadchart('${data.name},${AllFramesNum}')">图表图片</a>
+                                                <a href="#" onclick="downloadchart('${data.name}')">图表图片</a>
                                             </div>
                                         </div>
                                         <span class="delete-btn" onclick="deleteFile('${data.name}')" title="删除">×</span>
